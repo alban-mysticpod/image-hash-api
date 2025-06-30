@@ -1,3 +1,61 @@
+# Vibe Coding - Mockup Feature
+
+Ce projet est une fonctionnalité de génération de mockups 3D pour des produits personnalisés. Il utilise une combinaison de technologies frontend et backend pour créer des visualisations réalistes de produits.
+
+## Fonctionnalités
+
+- Génération de depth maps avec ZoeDepth (méthode principale)
+- Fallback sur MiDaS via FAL.ai en cas d'échec
+- Génération locale de depth maps en dernier recours
+- Interface utilisateur réactive avec indicateur de méthode utilisée
+- Traitement d'images optimisé pour les grands formats
+
+## Structure du Projet
+
+```
+mockup-feature/
+├── backend/              # Backend FastAPI
+│   ├── app.py           # Point d'entrée de l'API
+│   ├── requirements.txt # Dépendances Python
+│   └── weights/         # Poids des modèles (non inclus dans git)
+└── src/                 # Frontend React/Vite
+    ├── components/      # Composants React
+    └── utils/          # Utilitaires JS
+```
+
+## Installation
+
+### Backend
+
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python3 download_weights.py  # Télécharge les poids du modèle
+python3 -m uvicorn app:app --reload
+```
+
+### Frontend
+
+```bash
+npm install
+npm run dev
+```
+
+## Utilisation
+
+1. Démarrez le backend et le frontend
+2. Accédez à http://localhost:5173
+3. Téléchargez une image de produit
+4. Le système générera automatiquement une depth map en utilisant la meilleure méthode disponible
+
+## Technologies Utilisées
+
+- Frontend : React, Vite, PixiJS
+- Backend : FastAPI, PyTorch, ZoeDepth
+- APIs : FAL.ai (fallback)
+
 # Smart Mock-up Demo
 
 A standalone web application that demonstrates realistic fabric wrapping effects on garment mock-ups using depth estimation and WebGL shaders.

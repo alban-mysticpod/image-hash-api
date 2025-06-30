@@ -11,6 +11,8 @@ function App() {
   const [designImage, setDesignImage] = useState(null);
   const [designPosition, setDesignPosition] = useState({ x: 50, y: 50 });
   const [designSize, setDesignSize] = useState({ width: 200, height: 200 });
+  const [depthMapUrl, setDepthMapUrl] = useState(null);
+  const [depthMapMethod, setDepthMapMethod] = useState(null);
   
   // Interaction state
   const [isDragging, setIsDragging] = useState(false);
@@ -100,7 +102,17 @@ function App() {
       setProcessingStep('Analyzing depth information...');
       
       // Get depth map
-      const depthMap = await getDepthMap(file);
+      const { depthMap, method } = await getDepthMap(file);
+      setDepthMapMethod(method);
+      
+      // Create and display depth map preview
+      const depthMapCanvas = document.createElement('canvas');
+      depthMapCanvas.width = depthMap.width;
+      depthMapCanvas.height = depthMap.height;
+      const ctx = depthMapCanvas.getContext('2d');
+      ctx.drawImage(depthMap, 0, 0);
+      setDepthMapUrl(depthMapCanvas.toDataURL());
+      
       const processedDepthMap = await processDepthMap(depthMap);
       
       setProcessingStep('Calculating lighting masks...');
@@ -574,7 +586,37 @@ function App() {
             onChange={handleMockupChange}
             disabled={isProcessing}
           />
-          {mockupFile && <p>Selected: {mockupFile.name}</p>}
+          {mockupFile && depthMapUrl && (
+            <div className="depth-map-preview">
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '15px',
+                marginTop: '10px' 
+              }}>
+                <img 
+                  src={depthMapUrl} 
+                  alt="Depth Map Preview" 
+                  style={{ 
+                    maxWidth: '200px', 
+                    maxHeight: '200px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px'
+                  }} 
+                />
+                <div style={{
+                  padding: '8px 12px',
+                  backgroundColor: depthMapMethod === 'ZoeDepth' ? '#e6f4ea' : '#fff3e0',
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                  color: depthMapMethod === 'ZoeDepth' ? '#1e4620' : '#b45f06',
+                  border: `1px solid ${depthMapMethod === 'ZoeDepth' ? '#b7dfb9' : '#ffe0b2'}`
+                }}>
+                  {depthMapMethod || 'Unknown'} Depth Map
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="file-input">

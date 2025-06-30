@@ -1,20 +1,62 @@
 /**
- * Get depth map from image using MiDaS v3 small via Hugging Face Inference API
+ * Get depth map from image using ZoeDepth (primary) or MiDaS (fallback)
  * @param {File} imageFile - The mockup image file
- * @returns {Promise<ImageBitmap>} - Depth map as ImageBitmap
+ * @returns {Promise<{depthMap: ImageBitmap, method: string}>} - Depth map and method used
  */
 export async function getDepthMap(imageFile) {
-  // Try FAL.ai as primary method (most reliable with provided API key)
+  // Try ZoeDepth as primary method
+  try {
+    console.log('Attempting depth estimation via ZoeDepth...');
+    const depthMap = await getDepthMapZoe(imageFile);
+    return { depthMap, method: 'ZoeDepth' };
+  } catch (error) {
+    console.log('ZoeDepth failed:', error.message);
+  }
+
+  // Try FAL.ai as secondary method
   try {
     console.log('Attempting depth estimation via FAL.ai...');
-    return await getDepthMapFAL(imageFile);
+    const depthMap = await getDepthMapFAL(imageFile);
+    return { depthMap, method: 'MiDaS (FAL.ai)' };
   } catch (error) {
     console.log('FAL.ai failed:', error.message);
   }
 
   // Fallback to enhanced local depth map generation
-  console.log('API failed, using enhanced fallback depth map...');
-  return createFallbackDepthMap(imageFile);
+  console.log('All APIs failed, using enhanced fallback depth map...');
+  const depthMap = await createFallbackDepthMap(imageFile);
+  return { depthMap, method: 'Local Fallback' };
+}
+
+/**
+ * ZoeDepth implementation (primary depth estimation method)
+ */
+export async function getDepthMapZoe(imageFile) {
+  // Create form data
+  const formData = new FormData();
+  formData.append('file', imageFile);
+  
+  // Call local ZoeDepth service
+  const response = await fetch('http://localhost:8000/generate-depth', {
+    method: 'POST',
+    body: formData,
+    credentials: 'include',
+    headers: {
+      'Accept': 'image/png',
+    }
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`ZoeDepth estimation failed: ${response.status} - ${errorText}`);
+  }
+
+  // Convert response to ImageBitmap
+  const depthBlob = await response.blob();
+  const depthBitmap = await createImageBitmap(depthBlob);
+  
+  console.log('Successfully created depth bitmap from ZoeDepth');
+  return depthBitmap;
 }
 
 /**
