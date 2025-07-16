@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Test Design PNG</title>
+</head>
+<body>
+    <h1>Test Design Generator</h1>
+    <canvas id="designCanvas" width="400" height="400" style="border: 1px solid #ccc;"></canvas>
+    <br><br>
+    <button onclick="downloadDesign()">Download Test Design (PNG)</button>
+
+    <script>
+        const canvas = document.getElementById('designCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Clear canvas with transparent background
+        ctx.clearRect(0, 0, 400, 400);
+
+        // Create a colorful design with transparency
+        // Background circle
+        ctx.fillStyle = 'rgba(255, 107, 107, 0.8)';
+        ctx.beginPath();
+        ctx.arc(200, 200, 150, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Inner diamond
+        ctx.fillStyle = 'rgba(78, 205, 196, 0.9)';
+        ctx.beginPath();
+        ctx.moveTo(200, 100); // top
+        ctx.lineTo(280, 200); // right
+        ctx.lineTo(200, 300); // bottom
+        ctx.lineTo(120, 200); // left
+        ctx.closePath();
+        ctx.fill();
+
+        // Center circle
+        ctx.fillStyle = 'rgba(255, 230, 109, 0.9)';
+        ctx.beginPath();
+        ctx.arc(200, 200, 50, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Text
+        ctx.fillStyle = 'rgba(44, 62, 80, 1)';
+        ctx.font = 'bold 24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('TEST', 200, 340);
+        ctx.fillText('DESIGN', 200, 370);
+
+        function downloadDesign() {
+            // Create download link
+            const link = document.createElement('a');
+            link.download = 'test-design.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html> 
