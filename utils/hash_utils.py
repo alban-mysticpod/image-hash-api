@@ -85,7 +85,8 @@ def hamming_distance(hash1: str, hash2: str) -> int:
     try:
         ihash1 = imagehash.hex_to_hash(hash1)
         ihash2 = imagehash.hex_to_hash(hash2)
-        return ihash1 - ihash2
+        # Convertir le numpy.int64 en int Python standard pour éviter les erreurs de sérialisation JSON
+        return int(ihash1 - ihash2)
     except Exception:
         # Fallback: calcul manuel bit par bit
         distance = 0
