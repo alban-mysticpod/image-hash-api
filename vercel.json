@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "name": "vibe-coding",
+  "builds": [
+    {
+      "src": "image-hash-api/api/main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "image-hash-api/api/main.py"
+    }
+  ],
+  "functions": {
+    "image-hash-api/api/main.py": {
+      "runtime": "python3.9"
+    }
+  }
+} 

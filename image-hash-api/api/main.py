@@ -10,8 +10,9 @@ import io
 import requests
 from datetime import datetime
 
-# Ajouter le répertoire parent au path pour les imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Ajouter le répertoire du projet au path pour les imports
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
 
 from utils.hash_utils import generate_phash_from_bytes, generate_phash, hamming_distance
 from utils.template_manager import template_manager
