@@ -1,23 +1,23 @@
 # Vibe Coding - Multi-Project Repository
 
-Ce repository contient plusieurs projets de développement et d'expérimentation.
+This repository contains several development and experimentation projects.
 
-## 📁 Structure du Repository
+## 📁 Repository Structure
 
 ### 🎨 **mockup-feature/**
-Application de mockup avec frontend React et backend Python.
+Mockup application with React frontend and Python backend.
 - Frontend: React + Vite
 - Backend: Python Flask/FastAPI  
-- Docker configuration incluse
+- Docker configuration included
 
 ### 🔍 **image-hash-api/**
-API de reconnaissance de templates d'images via hashing perceptuel (pHash).
-- **API FastAPI** complète avec 8 endpoints
-- **Reconnaissance automatique** de templates d'images
-- **Support URL** et upload de fichiers
-- **Documentation Swagger** intégrée
+Image template recognition API via perceptual hashing (pHash).
+- **Complete FastAPI** with 8 endpoints
+- **Automatic recognition** of image templates
+- **URL support** and file upload
+- **Integrated Swagger** documentation
 
-Voir le [README détaillé](./image-hash-api/README.md) pour plus d'informations.
+See the [detailed README](./image-hash-api/README.md) for more information.
 
 ## 🚀 Quick Start
 
@@ -26,18 +26,18 @@ Voir le [README détaillé](./image-hash-api/README.md) pour plus d'informations
 cd image-hash-api
 pip install -r requirements.txt
 ./start.sh
-# API accessible sur http://localhost:8080
+# API accessible at http://localhost:8080
 ```
 
 ### Mockup Feature  
 ```bash
 cd mockup-feature
-# Voir le README du projet pour les instructions
+# See project README for instructions
 ```
 
 ## 📚 Documentation
 
-Chaque projet contient sa propre documentation détaillée dans son dossier respectif.
+Each project contains its own detailed documentation in its respective folder.
 
 ---
 

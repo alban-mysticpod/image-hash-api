@@ -1,60 +1,60 @@
 # Image Hash Template API
 
-API FastAPI pour la reconnaissance automatique de templates d'images via hashing perceptuel (pHash).
+FastAPI API for automatic image template recognition via perceptual hashing (pHash).
 
-## 🎯 Objectif
+## 🎯 Objective
 
-Cette API permet de :
-- Calculer le hash perceptuel (pHash) d'images
-- Stocker des templates d'images avec leurs hash
-- Identifier automatiquement le template correspondant à une nouvelle image
-- Comparer des images par similarité visuelle
+This API allows you to:
+- Calculate perceptual hash (pHash) of images
+- Store image templates with their hashes
+- Automatically identify matching template for new images
+- Compare images by visual similarity
 
-## 🚀 Installation et Démarrage
+## 🚀 Installation and Startup
 
-### 1. Installation des dépendances
+### 1. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Démarrer l'API
+### 2. Start the API
 
 ```bash
-# Méthode 1: Directement avec Python
+# Method 1: Directly with Python
 python api/main.py
 
-# Méthode 2: Avec uvicorn
+# Method 2: With uvicorn
 uvicorn api.main:app --host 0.0.0.0 --port 8080 --reload
 
-# Méthode 3: En arrière-plan
+# Method 3: In background
 uvicorn api.main:app --host 0.0.0.0 --port 8080 --reload &
 ```
 
-L'API sera accessible sur `http://localhost:8080`
+The API will be accessible at `http://localhost:8080`
 
-### 3. Documentation interactive
+### 3. Interactive documentation
 
-Accédez à la documentation Swagger UI : `http://localhost:8080/docs`
+Access Swagger UI documentation: `http://localhost:8080/docs`
 
-## 📋 Endpoints Disponibles
+## 📋 Available Endpoints
 
-### 🔍 **GET /** - Informations sur l'API
-Retourne les informations générales et la liste des endpoints.
+### 🔍 **GET /** - API Information
+Returns general information and list of endpoints.
 
-### 🖼️ **POST /hash-image** - Hasher une image
+### 🖼️ **POST /hash-image** - Hash an image
 
-Calcule le hash pHash d'une image envoyée.
+Calculate pHash of a sent image.
 
-**Utilisation avec curl :**
+**Usage with curl:**
 ```bash
 curl -X POST "http://localhost:8080/hash-image" \
   -H "accept: application/json" \
   -H "Content-Type: multipart/form-data" \
-  -F "file=@votre_image.jpg"
+  -F "file=@your_image.jpg"
 ```
 
-**Réponse exemple :**
+**Example response:**
 ```json
 {
   "success": true,
@@ -66,11 +66,11 @@ curl -X POST "http://localhost:8080/hash-image" \
 }
 ```
 
-### 🎯 **POST /match-template** - Trouver le template correspondant
+### 🎯 **POST /match-template** - Find matching template
 
-Trouve le template le plus similaire à un hash donné.
+Find the most similar template to a given hash.
 
-**Utilisation avec curl :**
+**Usage with curl:**
 ```bash
 curl -X POST "http://localhost:8080/match-template" \
   -H "accept: application/json" \
@@ -78,7 +78,7 @@ curl -X POST "http://localhost:8080/match-template" \
   -d "hash_value=ff00aaff00aaff00&threshold=5"
 ```
 
-**Réponse si match trouvé :**
+**Response if match found:**
 ```json
 {
   "success": true,

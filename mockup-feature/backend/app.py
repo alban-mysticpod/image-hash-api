@@ -1,7 +1,7 @@
 import os
 import sys
 
-# Ajouter le dossier parent au PYTHONPATH
+# Add parent folder to PYTHONPATH
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI, UploadFile, HTTPException
@@ -16,7 +16,7 @@ from TilingZoeDepth_GUI.zoedepth.utils.config import get_config
 
 app = FastAPI()
 
-# Configuration CORS
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -34,7 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configuration globale
+# Global configuration
 TILE_SIZE = 512
 OVERLAP = 64
 MODEL = None
@@ -43,15 +43,15 @@ MODEL = None
 async def startup_event():
     global MODEL
     try:
-        # Charger le modèle ZoeDepth
+        # Load ZoeDepth model
         conf = get_config("zoedepth", "infer")
         MODEL = ZoeDepth.build_from_config(conf)
         MODEL.eval()
         if torch.cuda.is_available():
             MODEL = MODEL.cuda()
-        print("Modèle ZoeDepth chargé avec succès")
+        print("ZoeDepth model loaded successfully")
     except Exception as e:
-        print(f"Erreur lors du chargement du modèle : {str(e)}")
+        print(f"Error loading model: {str(e)}")
 
 def process_tile(tile, model):
     """Traite une tuile d'image avec le modèle."""

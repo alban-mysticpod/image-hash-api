@@ -1,5 +1,5 @@
 """
-API FastAPI pour la gestion des templates d'images hashées.
+FastAPI API for managing hashed image templates.
 """
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.responses import JSONResponse
@@ -10,7 +10,7 @@ import io
 import requests
 from datetime import datetime
 
-# Ajouter le répertoire du projet au path pour les imports
+# Add project directory to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
@@ -19,26 +19,26 @@ from utils.template_manager import template_manager
 
 app = FastAPI(
     title="Image Hash Template API",
-    description="API pour la reconnaissance automatique de templates d'images via hashing perceptuel (pHash)",
+    description="API for automatic image template recognition via perceptual hashing (pHash)",
     version="1.0.0"
 )
 
 
 @app.get("/")
 async def root():
-    """Endpoint racine avec informations sur l'API."""
+    """Root endpoint with API information."""
     return {
         "message": "Image Hash Template API",
         "version": "1.0.0",
         "endpoints": {
-            "POST /hash-image": "Calcule le hash pHash d'une image",
-            "POST /match-template": "Trouve le template correspondant à un hash",
-            "POST /match-template-from-url": "Trouve le template correspondant à partir d'une URL d'image",
-            "POST /add-template": "Ajoute un nouveau template",
-            "POST /add-template-from-url": "Ajoute un nouveau template à partir d'une URL d'image",
-            "GET /templates": "Liste tous les templates",
-            "GET /templates/{template_id}": "Récupère un template par ID",
-            "DELETE /templates/{template_id}": "Supprime un template"
+            "POST /hash-image": "Calculate pHash of an image",
+            "POST /match-template": "Find template matching a hash",
+            "POST /match-template-from-url": "Find template matching from image URL",
+            "POST /add-template": "Add a new template",
+            "POST /add-template-from-url": "Add a new template from image URL",
+            "GET /templates": "List all templates",
+            "GET /templates/{template_id}": "Get template by ID",
+            "DELETE /templates/{template_id}": "Delete a template"
         }
     }
 
@@ -46,26 +46,26 @@ async def root():
 @app.post("/hash-image")
 async def hash_image(file: UploadFile = File(...)):
     """
-    Calcule le hash perceptuel (pHash) d'une image uploadée.
+    Calculate the perceptual hash (pHash) of an uploaded image.
     
     Args:
-        file: Fichier image à hasher
+        file: Image file to hash
         
     Returns:
-        dict: Hash de l'image et métadonnées
+        dict: Image hash and metadata
     """
-    # Vérifier le type de fichier
+    # Check file type
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(
             status_code=400,
-            detail="Le fichier doit être une image (JPEG, PNG, etc.)"
+            detail="File must be an image (JPEG, PNG, etc.)"
         )
     
     try:
-        # Lire le contenu du fichier
+        # Read file content
         image_data = await file.read()
         
-        # Générer le hash
+        # Generate hash
         image_hash = generate_phash_from_bytes(image_data)
         
         return {
@@ -80,7 +80,7 @@ async def hash_image(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors du calcul du hash: {str(e)}"
+            detail=f"Error calculating hash: {str(e)}"
         )
 
 
@@ -240,37 +240,41 @@ async def add_template(
     name: str = Form(...),
     hash_value: str = Form(...),
     reference_image_path: str = Form(...),
+    crop_x: Optional[str] = Form(None),
+    crop_y: Optional[str] = Form(None),
+    crop_w: Optional[str] = Form(None),
+    crop_h: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None)
 ):
     """
-    Ajoute un nouveau template au système.
+    Add a new template to the system.
     
     Args:
-        name: Nom du template
-        hash_value: Hash perceptuel du template
-        reference_image_path: Chemin vers l'image de référence
-        file: Optionnel - fichier image pour calculer automatiquement le hash
+        name: Template name
+        hash_value: Perceptual hash of the template
+        reference_image_path: Path to reference image
+        file: Optional - image file to automatically calculate hash
         
     Returns:
-        dict: Template créé avec ses informations
+        dict: Created template with its information
     """
     try:
-        # Si un fichier est fourni, calculer le hash automatiquement
+        # If a file is provided, calculate hash automatically
         if file:
             if not file.content_type or not file.content_type.startswith("image/"):
                 raise HTTPException(
                     status_code=400,
-                    detail="Le fichier doit être une image (JPEG, PNG, etc.)"
+                    detail="File must be an image (JPEG, PNG, etc.)"
                 )
             
             image_data = await file.read()
             calculated_hash = generate_phash_from_bytes(image_data)
             
-            # Utiliser le hash calculé si aucun n'est fourni explicitement
+            # Use calculated hash if none is provided explicitly
             if not hash_value or hash_value == "auto":
                 hash_value = calculated_hash
             
-            # Optionnel: sauvegarder l'image de référence localement
+            # Optional: save reference image locally
             if reference_image_path == "auto":
                 upload_dir = "data/uploads"
                 os.makedirs(upload_dir, exist_ok=True)
@@ -280,8 +284,31 @@ async def add_template(
                 with open(reference_image_path, "wb") as f:
                     f.write(image_data)
         
-        # Ajouter le template
-        new_template = template_manager.save_template(name, hash_value, reference_image_path)
+        # Convert cropping coordinates (string to int)
+        crop_coords = {}
+        try:
+            if crop_x is not None and crop_x.strip():
+                crop_coords['crop_x'] = int(crop_x)
+            if crop_y is not None and crop_y.strip():
+                crop_coords['crop_y'] = int(crop_y)
+            if crop_w is not None and crop_w.strip():
+                crop_coords['crop_w'] = int(crop_w)
+            if crop_h is not None and crop_h.strip():
+                crop_coords['crop_h'] = int(crop_h)
+        except ValueError as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Les coordonnées de cropping doivent être des nombres entiers: {e}"
+            )
+        
+        # Ajouter le template avec les coordonnées de cropping
+        new_template = template_manager.save_template(
+            name, hash_value, reference_image_path, 
+            crop_x=crop_coords.get('crop_x'),
+            crop_y=crop_coords.get('crop_y'),
+            crop_w=crop_coords.get('crop_w'),
+            crop_h=crop_coords.get('crop_h')
+        )
         
         return {
             "success": True,
@@ -601,7 +628,7 @@ async def delete_template(template_id: int):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de la suppression du template: {str(e)}"
+            detail=f"Error deleting template: {str(e)}"
         )
 
 
@@ -611,14 +638,14 @@ async def compare_hashes(
     hash2: str = Form(...)
 ):
     """
-    Compare deux hash et retourne leur distance de Hamming.
+    Compare two hashes and return their Hamming distance.
     
     Args:
-        hash1: Premier hash
-        hash2: Deuxième hash
+        hash1: First hash
+        hash2: Second hash
         
     Returns:
-        dict: Distance et similarité entre les hash
+        dict: Distance and similarity between hashes
     """
     try:
         distance = hamming_distance(hash1, hash2)
@@ -636,7 +663,7 @@ async def compare_hashes(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de la comparaison des hash: {str(e)}"
+            detail=f"Error comparing hashes: {str(e)}"
         )
 
 

@@ -1,43 +1,43 @@
 #!/bin/bash
 
-echo "🚀 Démarrage de l'API Image Hash Template"
-echo "========================================"
+echo "🚀 Starting Image Hash Template API"
+echo "==================================="
 
-# Vérifier si Python est installé
+# Check if Python is installed
 if ! command -v python3 &> /dev/null; then
-    echo "❌ Python 3 n'est pas installé"
+    echo "❌ Python 3 is not installed"
     exit 1
 fi
 
-# Vérifier si pip est installé
+# Check if pip is installed
 if ! command -v pip &> /dev/null && ! command -v pip3 &> /dev/null; then
-    echo "❌ pip n'est pas installé"
+    echo "❌ pip is not installed"
     exit 1
 fi
 
-# Installer les dépendances si requirements.txt existe
+# Install dependencies if requirements.txt exists
 if [ -f "requirements.txt" ]; then
-    echo "📦 Installation des dépendances..."
+    echo "📦 Installing dependencies..."
     pip install -r requirements.txt
     if [ $? -ne 0 ]; then
-        echo "❌ Erreur lors de l'installation des dépendances"
+        echo "❌ Error installing dependencies"
         exit 1
     fi
-    echo "✅ Dépendances installées"
+    echo "✅ Dependencies installed"
 else
-    echo "⚠️  Fichier requirements.txt introuvable"
+    echo "⚠️  requirements.txt file not found"
 fi
 
-# Créer les répertoires nécessaires
-echo "📁 Création des répertoires..."
+# Create necessary directories
+echo "📁 Creating directories..."
 mkdir -p data/uploads
-echo "✅ Répertoires créés"
+echo "✅ Directories created"
 
-# Démarrer l'API
-echo "🌟 Démarrage de l'API sur http://localhost:8080"
-echo "📚 Documentation disponible sur http://localhost:8080/docs"
+# Start the API
+echo "🌟 Starting API on http://localhost:8080"
+echo "📚 Documentation available at http://localhost:8080/docs"
 echo ""
-echo "Pour arrêter l'API, appuyez sur Ctrl+C"
+echo "To stop the API, press Ctrl+C"
 echo ""
 
 uvicorn api.main:app --host 0.0.0.0 --port 8080 --reload 

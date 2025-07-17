@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Exemple d'utilisation de l'API Image Hash Template.
+Example usage of the Image Hash Template API.
 
-Ce script montre comment utiliser l'API pour :
-1. Hasher une image
-2. Ajouter un template
-3. Rechercher un template correspondant
+This script shows how to use the API to:
+1. Hash an image
+2. Add a template
+3. Search for a matching template
 """
 import requests
 import json
@@ -16,7 +16,7 @@ import io
 API_BASE_URL = "http://localhost:8080"
 
 def create_sample_image(width=300, height=200, color="red", save_path=None):
-    """Crée une image d'exemple."""
+    """Create a sample image."""
     img = Image.new('RGB', (width, height), color)
     if save_path:
         img.save(save_path, "JPEG")
@@ -148,17 +148,17 @@ def example_workflow():
         else:
             print(f"❌ Erreur: {response.text}")
         
-        print("\n🎉 Exemple terminé avec succès !")
-        print("\n💡 Conseils:")
-        print("   - Des images avec des couleurs proches auront des hash similaires")
-        print("   - Ajustez le seuil selon vos besoins (5 par défaut)")
-        print("   - Consultez la doc interactive sur http://localhost:8000/docs")
+        print("\n🎉 Example completed successfully!")
+        print("\n💡 Tips:")
+        print("   - Images with similar colors will have similar hashes")
+        print("   - Adjust threshold according to your needs (5 by default)")
+        print("   - Check interactive docs at http://localhost:8000/docs")
         
     except requests.exceptions.ConnectionError:
-        print("❌ Impossible de se connecter à l'API")
-        print("💡 Démarrez l'API avec: uvicorn api.main:app --reload")
+        print("❌ Unable to connect to API")
+        print("💡 Start API with: uvicorn api.main:app --reload")
     except Exception as e:
-        print(f"❌ Erreur inattendue: {e}")
+        print(f"❌ Unexpected error: {e}")
 
 if __name__ == "__main__":
     example_workflow() 

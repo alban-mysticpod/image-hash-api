@@ -1,5 +1,5 @@
 """
-Gestionnaire des templates d'images.
+Image template manager.
 """
 import json
 import os
@@ -8,45 +8,47 @@ from datetime import datetime
 
 
 class TemplateManager:
-    """Gestionnaire pour les templates d'images."""
+    """Manager for image templates."""
     
     def __init__(self, templates_file: str = "data/templates.json"):
         """
-        Initialise le gestionnaire de templates.
+        Initialize template manager.
         
         Args:
-            templates_file (str): Chemin vers le fichier JSON des templates
+            templates_file (str): Path to JSON templates file
         """
         self.templates_file = templates_file
         self._ensure_templates_file_exists()
     
     def _ensure_templates_file_exists(self):
-        """Assure que le fichier templates.json existe."""
+        """Ensure templates.json file exists."""
         if not os.path.exists(self.templates_file):
-            # Créer le répertoire parent si nécessaire
+            # Create parent directory if necessary
             os.makedirs(os.path.dirname(self.templates_file), exist_ok=True)
             
-            # Créer le fichier avec une structure vide
+            # Create file with empty structure
             initial_data = {"templates": []}
             with open(self.templates_file, 'w', encoding='utf-8') as f:
                 json.dump(initial_data, f, indent=2, ensure_ascii=False)
     
     def load_templates(self) -> List[Dict]:
         """
-        Charge les templates depuis le fichier JSON.
+        Load templates from JSON file.
         
         Returns:
-            List[Dict]: Liste des templates avec leurs informations
+            List[Dict]: List of templates with their information
         """
         try:
             with open(self.templates_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 return data.get("templates", [])
         except (FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"Erreur lors du chargement des templates: {e}")
+            print(f"Error loading templates: {e}")
             return []
     
-    def save_template(self, name: str, hash_value: str, reference_image_path: str) -> Dict:
+    def save_template(self, name: str, hash_value: str, reference_image_path: str, 
+                     crop_x: Optional[int] = None, crop_y: Optional[int] = None, 
+                     crop_w: Optional[int] = None, crop_h: Optional[int] = None) -> Dict:
         """
         Ajoute un nouveau template au fichier JSON.
         
@@ -77,6 +79,18 @@ class TemplateManager:
             "usage_count": 0
         }
         
+        # Ajouter les coordonnées de cropping si fournies
+        if crop_x is not None:
+            new_template["crop_x"] = crop_x
+        if crop_y is not None:
+            new_template["crop_y"] = crop_y
+        if crop_w is not None:
+            new_template["crop_w"] = crop_w
+        if crop_h is not None:
+            new_template["crop_h"] = crop_h
+            
+
+        
         # Ajouter à la liste
         templates.append(new_template)
         
@@ -89,14 +103,14 @@ class TemplateManager:
     
     def find_template_by_hash(self, hash_value: str, threshold: int = 5) -> Optional[Dict]:
         """
-        Trouve un template correspondant au hash donné.
+        Find template matching given hash.
         
         Args:
-            hash_value (str): Hash à rechercher
-            threshold (int): Seuil de distance de Hamming acceptable
+            hash_value (str): Hash to search for
+            threshold (int): Acceptable Hamming distance threshold
             
         Returns:
-            Optional[Dict]: Template correspondant ou None si aucun trouvé
+            Optional[Dict]: Matching template or None if none found
         """
         from .hash_utils import hamming_distance
         
@@ -111,17 +125,17 @@ class TemplateManager:
                     best_match = template
                     best_distance = distance
             except Exception as e:
-                print(f"Erreur lors de la comparaison avec le template {template['name']}: {e}")
+                print(f"Error comparing with template {template['name']}: {e}")
                 continue
         
-        # Incrémenter le compteur d'usage si un template est trouvé
+        # Increment usage counter if template is found
         if best_match:
             self._increment_usage_count(best_match["id"])
         
         return best_match
     
     def _increment_usage_count(self, template_id: int):
-        """Incrémente le compteur d'usage d'un template."""
+        """Increment usage counter for a template."""
         templates = self.load_templates()
         
         for template in templates:
@@ -129,7 +143,7 @@ class TemplateManager:
                 template["usage_count"] = template.get("usage_count", 0) + 1
                 break
         
-        # Sauvegarder les modifications
+        # Save changes
         data = {"templates": templates}
         with open(self.templates_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)

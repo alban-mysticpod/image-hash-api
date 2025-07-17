@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script de test pour l'API Image Hash Template.
+Test script for the Image Hash Template API.
 """
 import requests
 import json
@@ -12,7 +12,7 @@ import io
 API_BASE_URL = "http://localhost:8080"
 
 def create_test_image(width=200, height=200, color="red"):
-    """Crée une image de test simple."""
+    """Create a simple test image."""
     img = Image.new('RGB', (width, height), color)
     img_bytes = io.BytesIO()
     img.save(img_bytes, format='JPEG')

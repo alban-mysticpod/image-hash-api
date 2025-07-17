@@ -1,87 +1,87 @@
-# Guide de Contribution
+# Contribution Guide
 
-Merci de votre intérêt pour contribuer à ce projet ! Voici quelques lignes directrices pour vous aider à démarrer.
+Thank you for your interest in contributing to this project! Here are some guidelines to help you get started.
 
-## Configuration de l'Environnement
+## Environment Setup
 
-1. Clonez le dépôt :
+1. Clone the repository:
 ```bash
-git clone https://github.com/votre-username/vibe-coding.git
+git clone https://github.com/your-username/vibe-coding.git
 cd vibe-coding/mockup-feature
 ```
 
-2. Configurez le backend :
+2. Setup the backend:
 ```bash
 cd backend
 python3 -m venv venv
-source venv/bin/activate  # Sur Windows : .\venv\Scripts\activate
+source venv/bin/activate  # On Windows: .\venv\Scripts\activate
 pip install -r requirements.txt
 python download_weights.py
 ```
 
-3. Configurez le frontend :
+3. Setup the frontend:
 ```bash
 cd ..
 npm install
 ```
 
-4. Créez un fichier `.env` basé sur `.env.example` et ajoutez vos clés API.
+4. Create a `.env` file based on `.env.example` and add your API keys.
 
-## Démarrage du Projet
+## Starting the Project
 
-1. Démarrez le backend :
+1. Start the backend:
 ```bash
 cd backend
 source venv/bin/activate
 python -m uvicorn app:app --reload
 ```
 
-2. Dans un autre terminal, démarrez le frontend :
+2. In another terminal, start the frontend:
 ```bash
 npm run dev
 ```
 
-## Structure du Projet
+## Project Structure
 
-- `backend/` : API FastAPI avec ZoeDepth
-- `src/` : Frontend React/Vite
-- `weights/` : Poids des modèles (téléchargés automatiquement)
+- `backend/` : FastAPI API with ZoeDepth
+- `src/` : React/Vite frontend
+- `weights/` : Model weights (downloaded automatically)
 
-## Processus de Contribution
+## Contribution Process
 
-1. Créez une branche pour votre fonctionnalité :
+1. Create a branch for your feature:
 ```bash
-git checkout -b feature/nom-de-la-fonctionnalite
+git checkout -b feature/feature-name
 ```
 
-2. Faites vos modifications et testez-les.
+2. Make your changes and test them.
 
-3. Committez vos changements :
+3. Commit your changes:
 ```bash
 git add .
-git commit -m "Description claire des changements"
+git commit -m "Clear description of changes"
 ```
 
-4. Poussez votre branche :
+4. Push your branch:
 ```bash
-git push origin feature/nom-de-la-fonctionnalite
+git push origin feature/feature-name
 ```
 
-5. Ouvrez une Pull Request sur GitHub.
+5. Open a Pull Request on GitHub.
 
-## Standards de Code
+## Code Standards
 
-- Utilisez des noms de variables et de fonctions descriptifs
-- Commentez votre code quand nécessaire
-- Suivez les conventions PEP 8 pour Python
-- Utilisez ESLint pour JavaScript/TypeScript
+- Use descriptive variable and function names
+- Comment your code when necessary
+- Follow PEP 8 conventions for Python
+- Use ESLint for JavaScript/TypeScript
 
-## Tests
+## Testing
 
-- Testez vos changements localement avant de soumettre une PR
-- Assurez-vous que tous les tests existants passent
-- Ajoutez des tests pour les nouvelles fonctionnalités
+- Test your changes locally before submitting a PR
+- Make sure all existing tests pass
+- Add tests for new features
 
-## Questions ?
+## Questions?
 
-Si vous avez des questions, n'hésitez pas à ouvrir une issue sur GitHub. 
+If you have questions, feel free to open an issue on GitHub. 
