@@ -46,7 +46,9 @@ class TemplateManager:
             print(f"Erreur lors du chargement des templates: {e}")
             return []
     
-    def save_template(self, name: str, hash_value: str, reference_image_path: str) -> Dict:
+    def save_template(self, name: str, hash_value: str, reference_image_path: str, 
+                     crop_x: Optional[int] = None, crop_y: Optional[int] = None, 
+                     crop_w: Optional[int] = None, crop_h: Optional[int] = None) -> Dict:
         """
         Ajoute un nouveau template au fichier JSON.
         
@@ -76,6 +78,18 @@ class TemplateManager:
             "created_at": datetime.now().isoformat(),
             "usage_count": 0
         }
+        
+        # Ajouter les coordonnées de cropping si fournies
+        if crop_x is not None:
+            new_template["crop_x"] = crop_x
+        if crop_y is not None:
+            new_template["crop_y"] = crop_y
+        if crop_w is not None:
+            new_template["crop_w"] = crop_w
+        if crop_h is not None:
+            new_template["crop_h"] = crop_h
+            
+
         
         # Ajouter à la liste
         templates.append(new_template)

@@ -240,6 +240,10 @@ async def add_template(
     name: str = Form(...),
     hash_value: str = Form(...),
     reference_image_path: str = Form(...),
+    crop_x: Optional[str] = Form(None),
+    crop_y: Optional[str] = Form(None),
+    crop_w: Optional[str] = Form(None),
+    crop_h: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None)
 ):
     """
@@ -280,8 +284,31 @@ async def add_template(
                 with open(reference_image_path, "wb") as f:
                     f.write(image_data)
         
-        # Ajouter le template
-        new_template = template_manager.save_template(name, hash_value, reference_image_path)
+        # Convertir les coordonnées de cropping (string vers int)
+        crop_coords = {}
+        try:
+            if crop_x is not None and crop_x.strip():
+                crop_coords['crop_x'] = int(crop_x)
+            if crop_y is not None and crop_y.strip():
+                crop_coords['crop_y'] = int(crop_y)
+            if crop_w is not None and crop_w.strip():
+                crop_coords['crop_w'] = int(crop_w)
+            if crop_h is not None and crop_h.strip():
+                crop_coords['crop_h'] = int(crop_h)
+        except ValueError as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Les coordonnées de cropping doivent être des nombres entiers: {e}"
+            )
+        
+        # Ajouter le template avec les coordonnées de cropping
+        new_template = template_manager.save_template(
+            name, hash_value, reference_image_path, 
+            crop_x=crop_coords.get('crop_x'),
+            crop_y=crop_coords.get('crop_y'),
+            crop_w=crop_coords.get('crop_w'),
+            crop_h=crop_coords.get('crop_h')
+        )
         
         return {
             "success": True,
