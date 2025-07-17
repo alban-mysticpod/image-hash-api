@@ -54,7 +54,7 @@ async def startup_event():
         print(f"Error loading model: {str(e)}")
 
 def process_tile(tile, model):
-    """Traite une tuile d'image avec le modèle."""
+    """Process an image tile with the model."""
     with torch.no_grad():
         if torch.cuda.is_available():
             tile = tile.cuda()
@@ -66,7 +66,7 @@ def process_tile(tile, model):
 @app.post("/generate-depth")
 async def generate_depth(file: UploadFile):
     try:
-        # Lire l'image
+        # Read image
         contents = await file.read()
         image = Image.open(io.BytesIO(contents))
         
@@ -74,7 +74,7 @@ async def generate_depth(file: UploadFile):
         if image.mode != 'RGB':
             image = image.convert('RGB')
             
-        # Obtenir les dimensions
+        # Get dimensions
         width, height = image.size
         
         # Initialiser la carte de profondeur
@@ -103,7 +103,7 @@ async def generate_depth(file: UploadFile):
         depth_map = (depth_map * 65535).astype(np.uint16)
         output = Image.fromarray(depth_map)
         
-        # Sauvegarder en mémoire
+        # Save in memory
         output_bytes = io.BytesIO()
         output.save(output_bytes, format='PNG')
         output_bytes.seek(0)

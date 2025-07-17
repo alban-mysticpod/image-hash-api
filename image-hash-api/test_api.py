@@ -20,26 +20,26 @@ def create_test_image(width=200, height=200, color="red"):
     return img_bytes
 
 def test_api_health():
-    """Test de santé de l'API."""
-    print("🏥 Test de santé de l'API...")
+    """API health test."""
+    print("🏥 API health test...")
+    
     try:
         response = requests.get(f"{API_BASE_URL}/")
         if response.status_code == 200:
             print("✅ API accessible")
             return True
         else:
-            print(f"❌ API inaccessible - Status: {response.status_code}")
+            print(f"❌ API returned status: {response.status_code}")
             return False
-    except requests.exceptions.ConnectionError:
-        print("❌ Impossible de se connecter à l'API")
-        print("💡 Assurez-vous que l'API est démarrée avec: uvicorn api.main:app --reload")
+    except Exception as e:
+        print(f"❌ Connection error: {e}")
         return False
 
 def test_hash_image():
-    """Test de hashing d'image."""
-    print("\n🔢 Test de hashing d'image...")
+    """Image hashing test."""
+    print("\n🔢 Image hashing test...")
     
-    # Créer une image de test
+    # Create test image
     test_img = create_test_image(200, 200, "blue")
     
     try:
@@ -50,14 +50,14 @@ def test_hash_image():
         
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ Hash calculé: {result['hash']}")
+            print(f"✅ Hash calculated: {result['hash']}")
             return result['hash']
         else:
-            print(f"❌ Erreur lors du hashing - Status: {response.status_code}")
-            print(f"   Réponse: {response.text}")
+            print(f"❌ Error during hashing - Status: {response.status_code}")
+            print(f"   Response: {response.text}")
             return None
     except Exception as e:
-        print(f"❌ Exception lors du hashing: {e}")
+        print(f"❌ Exception during hashing: {e}")
         return None
 
 def test_add_template(hash_value):
@@ -79,16 +79,16 @@ def test_add_template(hash_value):
             print(f"✅ Template ajouté: {result['template']['name']}")
             return result['template']['id']
         else:
-            print(f"❌ Erreur lors de l'ajout - Status: {response.status_code}")
-            print(f"   Réponse: {response.text}")
+            print(f"❌ Error during addition - Status: {response.status_code}")
+            print(f"   Response: {response.text}")
             return None
     except Exception as e:
-        print(f"❌ Exception lors de l'ajout: {e}")
+        print(f"❌ Exception during addition: {e}")
         return None
 
 def test_match_template(hash_value):
-    """Test de matching de template."""
-    print("\n🎯 Test de matching de template...")
+    """Template matching test."""
+    print("\n🎯 Template matching test...")
     
     try:
         response = requests.post(
@@ -102,44 +102,44 @@ def test_match_template(hash_value):
         if response.status_code == 200:
             result = response.json()
             if result['match_found']:
-                print(f"✅ Match trouvé: {result['template']['name']}")
+                print(f"✅ Match found: {result['template']['name']}")
                 print(f"   Distance: {result['hamming_distance']}")
-                print(f"   Similarité: {result['similarity_score']}%")
+                print(f"   Similarity: {result['similarity_score']}%")
             else:
-                print("❌ Aucun match trouvé")
+                print("❌ No match found")
             return result
         else:
-            print(f"❌ Erreur lors du matching - Status: {response.status_code}")
+            print(f"❌ Error during matching - Status: {response.status_code}")
             return None
     except Exception as e:
-        print(f"❌ Exception lors du matching: {e}")
+        print(f"❌ Exception during matching: {e}")
         return None
 
 def test_list_templates():
-    """Test de listage des templates."""
-    print("\n📋 Test de listage des templates...")
+    """Template listing test."""
+    print("\n📋 Template listing test...")
     
     try:
         response = requests.get(f"{API_BASE_URL}/templates")
         
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ {result['count']} template(s) trouvé(s)")
+            print(f"✅ {result['count']} template(s) found")
             for template in result['templates']:
                 print(f"   - {template['name']} (ID: {template['id']})")
             return result['templates']
         else:
-            print(f"❌ Erreur lors du listage - Status: {response.status_code}")
+            print(f"❌ Error during listing - Status: {response.status_code}")
             return None
     except Exception as e:
-        print(f"❌ Exception lors du listage: {e}")
+        print(f"❌ Exception during listing: {e}")
         return None
 
 def test_compare_hashes():
-    """Test de comparaison de hashes."""
-    print("\n⚖️ Test de comparaison de hashes...")
+    """Hash comparison test."""
+    print("\n⚖️ Hash comparison test...")
     
-    # Créer deux images similaires
+    # Create two similar images
     img1 = create_test_image(200, 200, "red")
     img2 = create_test_image(200, 200, "blue")
     
@@ -169,18 +169,18 @@ def test_compare_hashes():
         
         if response.status_code == 200:
             result = response.json()
-            print(f"✅ Comparaison effectuée")
+            print(f"✅ Comparison completed")
             print(f"   Hash 1: {result['hash1']}")
             print(f"   Hash 2: {result['hash2']}")
             print(f"   Distance: {result['hamming_distance']}")
-            print(f"   Similarité: {result['similarity_score']}%")
-            print(f"   Similaires: {result['are_similar']}")
+            print(f"   Similarity: {result['similarity_score']}%")
+            print(f"   Similar: {result['are_similar']}")
             return True
         else:
-            print(f"❌ Erreur lors de la comparaison - Status: {response.status_code}")
+            print(f"❌ Error during comparison - Status: {response.status_code}")
             return False
     except Exception as e:
-        print(f"❌ Exception lors de la comparaison: {e}")
+        print(f"❌ Exception during comparison: {e}")
         return False
 
 def run_complete_test():
@@ -211,18 +211,18 @@ def run_complete_test():
     if templates is None:
         return False
     
-    # Test 6: Comparaison de hashes
+    # Test 6: Hash comparison
     if not test_compare_hashes():
         return False
     
-    print("\n🎉 Tous les tests sont passés avec succès !")
-    print("\n📊 Résumé:")
+    print("\n🎉 All tests passed successfully!")
+    print("\n📊 Summary:")
     print("   ✅ API accessible")
-    print("   ✅ Hashing d'images fonctionnel")
-    print("   ✅ Ajout de templates fonctionnel")
-    print("   ✅ Matching de templates fonctionnel")
-    print("   ✅ Listage des templates fonctionnel")
-    print("   ✅ Comparaison de hashes fonctionnelle")
+    print("   ✅ Image hashing functional")
+    print("   ✅ Template addition functional")
+    print("   ✅ Template matching functional")
+    print("   ✅ Template listing functional")
+    print("   ✅ Hash comparison functional")
     
     return True
 

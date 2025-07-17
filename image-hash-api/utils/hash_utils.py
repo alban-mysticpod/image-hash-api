@@ -73,22 +73,22 @@ def hamming_distance(hash1: str, hash2: str) -> int:
         hash2 (str): Second hash
         
     Returns:
-        int: Distance de Hamming (nombre de bits différents)
+        int: Hamming distance (number of different bits)
         
     Raises:
-        ValueError: Si les hash n'ont pas la même longueur
+        ValueError: If hashes don't have the same length
     """
     if len(hash1) != len(hash2):
-        raise ValueError("Les hash doivent avoir la même longueur")
+        raise ValueError("Hashes must have the same length")
     
-    # Convertir les hash en objets ImageHash pour utiliser la méthode intégrée
+    # Convert hashes to ImageHash objects to use built-in method
     try:
         ihash1 = imagehash.hex_to_hash(hash1)
         ihash2 = imagehash.hex_to_hash(hash2)
-        # Convertir le numpy.int64 en int Python standard pour éviter les erreurs de sérialisation JSON
+        # Convert numpy.int64 to standard Python int to avoid JSON serialization errors
         return int(ihash1 - ihash2)
     except Exception:
-        # Fallback: calcul manuel bit par bit
+        # Fallback: manual bit-by-bit calculation
         distance = 0
         for i in range(len(hash1)):
             if hash1[i] != hash2[i]:

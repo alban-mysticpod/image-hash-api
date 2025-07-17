@@ -61,15 +61,15 @@ class TemplateManager:
             Dict: Le template créé avec son ID
             
         Raises:
-            ValueError: Si un template avec le même nom existe déjà
+            ValueError: If a template with the same name already exists
         """
         templates = self.load_templates()
         
-        # Vérifier si un template avec ce nom existe déjà
+        # Check if template with this name already exists
         if any(t["name"] == name for t in templates):
-            raise ValueError(f"Un template avec le nom '{name}' existe déjà")
+            raise ValueError(f"A template with name '{name}' already exists")
         
-        # Créer le nouveau template
+        # Create new template
         new_template = {
             "id": len(templates) + 1,
             "name": name,
@@ -79,7 +79,7 @@ class TemplateManager:
             "usage_count": 0
         }
         
-        # Ajouter les coordonnées de cropping si fournies
+        # Add cropping coordinates if provided
         if crop_x is not None:
             new_template["crop_x"] = crop_x
         if crop_y is not None:
@@ -91,10 +91,10 @@ class TemplateManager:
             
 
         
-        # Ajouter à la liste
+        # Add to list
         templates.append(new_template)
         
-        # Sauvegarder
+        # Save
         data = {"templates": templates}
         with open(self.templates_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
@@ -150,48 +150,48 @@ class TemplateManager:
     
     def get_template_by_id(self, template_id: int) -> Optional[Dict]:
         """
-        Récupère un template par son ID.
+        Retrieve a template by its ID.
         
         Args:
-            template_id (int): ID du template
+            template_id (int): Template ID
             
         Returns:
-            Optional[Dict]: Template trouvé ou None
+            Optional[Dict]: Found template or None
         """
         templates = self.load_templates()
         return next((t for t in templates if t["id"] == template_id), None)
     
     def get_template_by_name(self, name: str) -> Optional[Dict]:
         """
-        Récupère un template par son nom.
+        Retrieve a template by its name.
         
         Args:
-            name (str): Nom du template
+            name (str): Template name
             
         Returns:
-            Optional[Dict]: Template trouvé ou None
+            Optional[Dict]: Found template or None
         """
         templates = self.load_templates()
         return next((t for t in templates if t["name"] == name), None)
     
     def list_templates(self) -> List[Dict]:
         """
-        Liste tous les templates avec leurs statistiques.
+        List all templates with their statistics.
         
         Returns:
-            List[Dict]: Liste des templates
+            List[Dict]: List of templates
         """
         return self.load_templates()
     
     def delete_template(self, template_id: int) -> bool:
         """
-        Supprime un template par son ID.
+        Delete a template by its ID.
         
         Args:
-            template_id (int): ID du template à supprimer
+            template_id (int): ID of template to delete
             
         Returns:
-            bool: True si supprimé, False si non trouvé
+            bool: True if deleted, False if not found
         """
         templates = self.load_templates()
         initial_count = len(templates)
@@ -207,5 +207,5 @@ class TemplateManager:
         return False
 
 
-# Instance globale pour faciliter l'utilisation
+# Global instance for easy usage
 template_manager = TemplateManager() 
