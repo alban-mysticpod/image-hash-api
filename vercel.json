@@ -1,19 +1,21 @@
 {
   "version": 2,
-  "name": "image-hash-api",
+  "name": "vibe-coding",
   "builds": [
     {
-      "src": "api/main.py",
+      "src": "image-hash-api/api/main.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/(.*)",
-      "dest": "api/main.py"
+      "src": "/api/(.*)",
+      "dest": "image-hash-api/api/main.py"
     }
   ],
-  "env": {
-    "PYTHONPATH": "."
+  "functions": {
+    "image-hash-api/api/main.py": {
+      "runtime": "python3.9"
+    }
   }
 } 

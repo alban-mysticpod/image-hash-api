@@ -1,0 +1,309 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  align-items: center;
+}
+
+.file-inputs {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.file-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 200px;
+}
+
+.file-input input[type="file"] {
+  padding: 0.5rem;
+  border: 2px dashed #646cff;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+}
+
+.file-input input[type="file"]:hover {
+  border-color: #535bf2;
+}
+
+/* Design Container - Interactive Area */
+.design-container {
+  position: relative;
+  max-width: 800px;
+  max-height: 600px;
+  margin: 2rem auto;
+  border: 3px solid #646cff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  user-select: none;
+}
+
+.mockup-background {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: #000;
+}
+
+/* Draggable Design Element */
+.draggable-design {
+  position: absolute;
+  border: 2px solid #646cff;
+  border-radius: 8px;
+  background: rgba(100, 108, 255, 0.1);
+  backdrop-filter: blur(5px);
+  z-index: 10;
+  transition: box-shadow 0.2s ease;
+}
+
+.draggable-design:hover {
+  box-shadow: 0 4px 20px rgba(100, 108, 255, 0.4);
+  border-color: #535bf2;
+}
+
+.draggable-design img {
+  pointer-events: none;
+  border-radius: 6px;
+}
+
+/* Resize Handle */
+.resize-handle {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 20px;
+  height: 20px;
+  background: #646cff;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  z-index: 20;
+  transition: all 0.2s ease;
+}
+
+.resize-handle:hover {
+  background: #535bf2;
+  transform: scale(1.2);
+  box-shadow: 0 0 10px rgba(100, 108, 255, 0.6);
+}
+
+/* Processing Status */
+.processing-status {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  background: rgba(100, 108, 255, 0.1);
+  border: 2px solid #646cff;
+  border-radius: 8px;
+  margin: 1rem 0;
+  color: #646cff;
+  font-weight: 600;
+}
+
+.processing-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top: 2px solid #646cff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Design Position Indicator */
+.design-indicator {
+  border: 2px dashed rgba(255, 255, 255, 0.8) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  transition: all 0.2s ease;
+}
+
+.design-indicator:hover {
+  border-color: rgba(100, 108, 255, 0.8) !important;
+  background: rgba(100, 108, 255, 0.1) !important;
+  box-shadow: 0 0 20px rgba(100, 108, 255, 0.3);
+}
+
+/* Mockup Preview Canvas */
+.mockup-preview {
+  border-radius: 12px;
+}
+
+/* Generate Button */
+.generate-btn {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+  background: #646cff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  margin: 1rem 0;
+}
+
+.generate-btn:hover {
+  background: #535bf2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(100, 108, 255, 0.4);
+}
+
+.generate-btn:disabled {
+  background: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Result Section */
+.result-section {
+  margin-top: 2rem;
+  padding: 2rem;
+  border: 2px solid #646cff;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.final-result {
+  max-width: 100%;
+  max-height: 500px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  margin: 1rem 0;
+}
+
+.download-btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: #4ade80;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  margin-top: 1rem;
+}
+
+.download-btn:hover {
+  background: #22c55e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .file-inputs {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .design-container {
+    max-width: 90vw;
+    max-height: 50vh;
+  }
+  
+  #root {
+    padding: 1rem;
+  }
+}
+
+/* Loading States */
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #646cff;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #646cff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Interactive Hints */
+.design-container::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  padding: 0.5rem;
+  background: rgba(100, 108, 255, 0.9);
+  color: white;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.design-container:hover::before {
+  content: '💡 Drag to move • Drag corner handle to resize';
+  opacity: 1;
+}
+
+.error {
+  background: rgba(255, 75, 75, 0.2);
+  border: 2px solid #ff4b4b;
+  color: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  white-space: pre-line;
+  text-align: left;
+}
