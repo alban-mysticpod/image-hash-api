@@ -14,7 +14,7 @@ from datetime import datetime
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-from utils.hash_utils import generate_phash_from_bytes, generate_phash, hamming_distance
+from utils.hash_utils import generate_phash_from_bytes, generate_phash, hamming_distance, generate_phash_with_dimensions_from_bytes, get_image_dimensions_from_bytes
 from utils.template_manager import template_manager
 
 app = FastAPI(
@@ -31,11 +31,13 @@ async def root():
         "message": "Image Hash Template API",
         "version": "1.0.0",
         "endpoints": {
-            "POST /hash-image": "Calculate pHash of an image",
+            "POST /hash-image": "Calculate pHash of an image (includes dimensions)",
+            "POST /image-dimensions": "Get dimensions of an uploaded image",
+            "POST /image-dimensions-from-url": "Get dimensions of an image from URL",
             "POST /match-template": "Find template matching a hash",
-            "POST /match-template-from-url": "Find template matching from image URL",
+            "POST /match-template-from-url": "Find template matching from image URL (includes dimensions)",
             "POST /add-template": "Add a new template",
-            "POST /add-template-from-url": "Add a new template from image URL",
+            "POST /add-template-from-url": "Add a new template from image URL (includes dimensions)",
             "GET /templates": "List all templates",
             "GET /templates/{template_id}": "Get template by ID",
             "DELETE /templates/{template_id}": "Delete a template"
@@ -43,16 +45,16 @@ async def root():
     }
 
 
-@app.post("/hash-image")
-async def hash_image(file: UploadFile = File(...)):
+@app.post("/image-dimensions")
+async def get_image_dimensions_endpoint(file: UploadFile = File(...)):
     """
-    Calculate the perceptual hash (pHash) of an uploaded image.
+    Get dimensions (width, height) of an uploaded image.
     
     Args:
-        file: Image file to hash
+        file: Image file to analyze
         
     Returns:
-        dict: Image hash and metadata
+        dict: Image dimensions and metadata
     """
     # Check file type
     if not file.content_type or not file.content_type.startswith("image/"):
@@ -65,12 +67,116 @@ async def hash_image(file: UploadFile = File(...)):
         # Read file content
         image_data = await file.read()
         
-        # Generate hash
-        image_hash = generate_phash_from_bytes(image_data)
+        # Get dimensions
+        width, height = get_image_dimensions_from_bytes(image_data)
         
         return {
             "success": True,
-            "hash": image_hash,
+            "width": width,
+            "height": height,
+            "filename": file.filename,
+            "content_type": file.content_type,
+            "file_size": len(image_data),
+            "processed_at": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error getting image dimensions: {str(e)}"
+        )
+
+
+@app.post("/image-dimensions-from-url")
+async def get_image_dimensions_from_url(image_url: str = Form(...)):
+    """
+    Get dimensions (width, height) of an image from its URL.
+    
+    Args:
+        image_url: Public URL of the image to analyze
+        
+    Returns:
+        dict: Image dimensions and metadata
+    """
+    try:
+        # Download image from URL
+        print(f"📥 Downloading image for dimensions: {image_url}")
+        response = requests.get(image_url, timeout=30)
+        response.raise_for_status()
+        
+        # Check content type
+        content_type = response.headers.get('content-type', '')
+        if not content_type.startswith('image/'):
+            raise HTTPException(
+                status_code=400,
+                detail=f"URL does not point to a valid image. Content type: {content_type}"
+            )
+        
+        # Get image data and dimensions
+        image_data = response.content
+        image_size = len(image_data)
+        width, height = get_image_dimensions_from_bytes(image_data)
+        
+        return {
+            "success": True,
+            "width": width,
+            "height": height,
+            "image_info": {
+                "url": image_url,
+                "content_type": content_type,
+                "file_size": image_size,
+                "processed_at": datetime.now().isoformat()
+            }
+        }
+        
+    except requests.exceptions.Timeout:
+        raise HTTPException(
+            status_code=408,
+            detail="Timeout while downloading image (>30s)"
+        )
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Error downloading image: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error getting image dimensions: {str(e)}"
+        )
+
+
+@app.post("/hash-image")
+async def hash_image(file: UploadFile = File(...)):
+    """
+    Calculate the perceptual hash (pHash) of an uploaded image and get its dimensions.
+    
+    Args:
+        file: Image file to hash
+        
+    Returns:
+        dict: Image hash, dimensions (width, height), and metadata
+    """
+    # Check file type
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=400,
+            detail="File must be an image (JPEG, PNG, etc.)"
+        )
+    
+    try:
+        # Read file content
+        image_data = await file.read()
+        
+        # Generate hash and get dimensions
+        hash_and_dimensions = generate_phash_with_dimensions_from_bytes(image_data)
+        width, height = get_image_dimensions_from_bytes(image_data)
+        
+        return {
+            "success": True,
+            "hash": hash_and_dimensions["hash"],
+            "width": hash_and_dimensions["width"],
+            "height": hash_and_dimensions["height"],
             "filename": file.filename,
             "content_type": file.content_type,
             "file_size": len(image_data),
@@ -171,9 +277,10 @@ async def match_template_from_url(
         image_data = response.content
         image_size = len(image_data)
         
-        # Calculate image hash
+        # Calculate image hash and get dimensions
         print(f"🔢 Calculating hash for image ({image_size} bytes)")
-        calculated_hash = generate_phash_from_bytes(image_data)
+        hash_and_dimensions = generate_phash_with_dimensions_from_bytes(image_data)
+        calculated_hash = hash_and_dimensions["hash"]
         
         # Search for matching template
         print(f"🔍 Searching template for hash: {calculated_hash}")
@@ -189,6 +296,8 @@ async def match_template_from_url(
                 "image_info": {
                     "url": image_url,
                     "hash": calculated_hash,
+                    "width": hash_and_dimensions["width"],
+                    "height": hash_and_dimensions["height"],
                     "content_type": content_type,
                     "file_size": image_size,
                     "processed_at": datetime.now().isoformat()
@@ -205,6 +314,8 @@ async def match_template_from_url(
                 "image_info": {
                     "url": image_url,
                     "hash": calculated_hash,
+                    "width": hash_and_dimensions["width"],
+                    "height": hash_and_dimensions["height"],
                     "content_type": content_type,
                     "file_size": image_size,
                     "processed_at": datetime.now().isoformat()
@@ -259,6 +370,9 @@ async def add_template(
         dict: Created template with its information
     """
     try:
+        # Variables to store image dimensions if file is provided
+        image_dimensions = None
+        
         # If a file is provided, calculate hash automatically
         if file:
             if not file.content_type or not file.content_type.startswith("image/"):
@@ -268,7 +382,17 @@ async def add_template(
                 )
             
             image_data = await file.read()
-            calculated_hash = generate_phash_from_bytes(image_data)
+            hash_and_dimensions = generate_phash_with_dimensions_from_bytes(image_data)
+            calculated_hash = hash_and_dimensions["hash"]
+            
+            # Store dimensions for response
+            image_dimensions = {
+                "width": hash_and_dimensions["width"],
+                "height": hash_and_dimensions["height"],
+                "file_size": len(image_data),
+                "content_type": file.content_type,
+                "filename": file.filename
+            }
             
             # Use calculated hash if none is provided explicitly
             if not hash_value or hash_value == "auto":
@@ -310,11 +434,21 @@ async def add_template(
             crop_h=crop_coords.get('crop_h')
         )
         
-        return {
+        # Prepare response with dimensions if available
+        response = {
             "success": True,
             "message": f"Template '{name}' added successfully",
             "template": new_template
         }
+        
+        # Add image dimensions if file was processed
+        if image_dimensions:
+            response["image_info"] = {
+                **image_dimensions,
+                "processed_at": datetime.now().isoformat()
+            }
+        
+        return response
         
     except ValueError as e:
         raise HTTPException(
@@ -361,9 +495,10 @@ async def add_template_from_url(
         image_data = response.content
         image_size = len(image_data)
         
-        # Calculate image hash
+        # Calculate image hash and get dimensions
         print(f"🔢 Calculating hash for new template ({image_size} bytes)")
-        calculated_hash = generate_phash_from_bytes(image_data)
+        hash_and_dimensions = generate_phash_with_dimensions_from_bytes(image_data)
+        calculated_hash = hash_and_dimensions["hash"]
         
         # Check if template with this hash already exists
         existing_template = template_manager.find_template_by_hash(calculated_hash, threshold=2)
@@ -431,6 +566,8 @@ async def add_template_from_url(
                 "source_url": image_url,
                 "local_path": reference_image_path,
                 "hash": calculated_hash,
+                "width": hash_and_dimensions["width"],
+                "height": hash_and_dimensions["height"],
                 "content_type": content_type,
                 "file_size": image_size,
                 "processed_at": datetime.now().isoformat()

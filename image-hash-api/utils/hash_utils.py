@@ -8,6 +8,124 @@ import io
 import io
 
 
+def get_image_dimensions(image_path: str) -> tuple[int, int]:
+    """
+    Get dimensions (width, height) of an image from file path.
+    
+    Args:
+        image_path (str): Path to image
+        
+    Returns:
+        tuple[int, int]: Width and height of the image
+        
+    Raises:
+        FileNotFoundError: If image doesn't exist
+        Exception: If image cannot be processed
+    """
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"Image {image_path} does not exist")
+    
+    try:
+        with Image.open(image_path) as img:
+            width, height = img.size
+            return width, height
+    except Exception as e:
+        raise Exception(f"Error processing image {image_path}: {str(e)}")
+
+
+def get_image_dimensions_from_bytes(image_bytes: bytes) -> tuple[int, int]:
+    """
+    Get dimensions (width, height) of an image from bytes.
+    
+    Args:
+        image_bytes (bytes): Binary image data
+        
+    Returns:
+        tuple[int, int]: Width and height of the image
+        
+    Raises:
+        Exception: If image cannot be processed
+    """
+    try:
+        with Image.open(io.BytesIO(image_bytes)) as img:
+            width, height = img.size
+            return width, height
+    except Exception as e:
+        raise Exception(f"Error processing image: {str(e)}")
+
+
+def generate_phash_with_dimensions(image_path: str) -> dict:
+    """
+    Generate perceptual hash (pHash) and get dimensions of an image from file path.
+    
+    Args:
+        image_path (str): Path to image
+        
+    Returns:
+        dict: Dictionary containing hash, width, and height
+        
+    Raises:
+        FileNotFoundError: If image doesn't exist
+        Exception: If image cannot be processed
+    """
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"Image {image_path} does not exist")
+    
+    try:
+        with Image.open(image_path) as img:
+            # Convert to RGB if necessary
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            
+            # Get dimensions
+            width, height = img.size
+            
+            # Generate perceptual hash
+            phash = imagehash.phash(img)
+            
+            return {
+                "hash": str(phash),
+                "width": width,
+                "height": height
+            }
+    except Exception as e:
+        raise Exception(f"Error processing image {image_path}: {str(e)}")
+
+
+def generate_phash_with_dimensions_from_bytes(image_bytes: bytes) -> dict:
+    """
+    Generate perceptual hash (pHash) and get dimensions of an image from bytes.
+    
+    Args:
+        image_bytes (bytes): Binary image data
+        
+    Returns:
+        dict: Dictionary containing hash, width, and height
+        
+    Raises:
+        Exception: If image cannot be processed
+    """
+    try:
+        with Image.open(io.BytesIO(image_bytes)) as img:
+            # Convert to RGB if necessary
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            
+            # Get dimensions
+            width, height = img.size
+            
+            # Generate perceptual hash
+            phash = imagehash.phash(img)
+            
+            return {
+                "hash": str(phash),
+                "width": width,
+                "height": height
+            }
+    except Exception as e:
+        raise Exception(f"Error processing image: {str(e)}")
+
+
 def generate_phash(image_path: str) -> str:
     """
     Generate perceptual hash (pHash) of an image.

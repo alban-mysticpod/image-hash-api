@@ -83,6 +83,58 @@
       "crop_w": 1007,
       "crop_h": 1545,
       "usage_count": 0
+    },
+    {
+      "id": 8,
+      "name": "Test Template Dimensions 2",
+      "hash": "8000000000000000",
+      "reference_image_path": "data/uploads/Test Template Dimensions 2_20250721_172247_test_image.jpg",
+      "created_at": "2025-07-21T17:22:47.855823",
+      "usage_count": 3
+    },
+    {
+      "id": 9,
+      "name": "Test Template Final",
+      "hash": "8000000000000000",
+      "reference_image_path": "data/uploads/Test Template Final_20250721_172433_test_image.jpg",
+      "created_at": "2025-07-21T17:24:33.333794",
+      "usage_count": 0
+    },
+    {
+      "id": 10,
+      "name": "Pattern Template URL",
+      "hash": "aa158243f57adc2d",
+      "reference_image_path": "data/uploads/Pattern_Template_URL_20250721_172525_pattern_test_image.jpg",
+      "created_at": "2025-07-21T17:25:25.867974",
+      "usage_count": 1
+    },
+    {
+      "id": 11,
+      "name": "Template with Crop Ratios",
+      "hash": "aa158243f57adc2d",
+      "reference_image_path": "data/uploads/Template with Crop Ratios_20250721_174857_pattern_test_image.jpg",
+      "created_at": "2025-07-21T17:48:57.420871",
+      "usage_count": 0,
+      "crop_x": 100,
+      "crop_y": 50,
+      "crop_w": 200,
+      "crop_h": 150,
+      "image_width": 800,
+      "image_height": 600,
+      "crop_x_ratio": 0.125,
+      "crop_y_ratio": 0.08333333333333333,
+      "crop_w_ratio": 0.25,
+      "crop_h_ratio": 0.25
+    },
+    {
+      "id": 12,
+      "name": "Template URL with Dimensions",
+      "hash": "af1296b6c969d119",
+      "reference_image_path": "data/uploads/Template_URL_with_Dimensions_20250721_174938_unique_ratios_image.jpg",
+      "created_at": "2025-07-21T17:49:38.279305",
+      "usage_count": 0,
+      "image_width": 640,
+      "image_height": 480
     }
   ]
 }

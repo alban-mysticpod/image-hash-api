@@ -1,5 +1,5 @@
 """
-API FastAPI pour la gestion des templates d'images hashées.
+FastAPI API for managing hashed image templates.
 """
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.responses import JSONResponse
@@ -10,67 +10,173 @@ import io
 import requests
 from datetime import datetime
 
-# Ajouter le répertoire du projet au path pour les imports
+# Add project directory to path for imports
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-from utils.hash_utils import generate_phash_from_bytes, generate_phash, hamming_distance
+from utils.hash_utils import generate_phash_from_bytes, generate_phash, hamming_distance, generate_phash_with_dimensions_from_bytes, get_image_dimensions_from_bytes
 from utils.template_manager import template_manager
 
 app = FastAPI(
     title="Image Hash Template API",
-    description="API pour la reconnaissance automatique de templates d'images via hashing perceptuel (pHash)",
+    description="API for automatic image template recognition via perceptual hashing (pHash)",
     version="1.0.0"
 )
 
 
 @app.get("/")
 async def root():
-    """Endpoint racine avec informations sur l'API."""
+    """Root endpoint with API information."""
     return {
         "message": "Image Hash Template API",
         "version": "1.0.0",
         "endpoints": {
-            "POST /hash-image": "Calcule le hash pHash d'une image",
-            "POST /match-template": "Trouve le template correspondant à un hash",
-            "POST /match-template-from-url": "Trouve le template correspondant à partir d'une URL d'image",
-            "POST /add-template": "Ajoute un nouveau template",
-            "POST /add-template-from-url": "Ajoute un nouveau template à partir d'une URL d'image",
-            "GET /templates": "Liste tous les templates",
-            "GET /templates/{template_id}": "Récupère un template par ID",
-            "DELETE /templates/{template_id}": "Supprime un template"
+            "POST /hash-image": "Calculate pHash of an image (includes dimensions)",
+            "POST /image-dimensions": "Get dimensions of an uploaded image",
+            "POST /image-dimensions-from-url": "Get dimensions of an image from URL",
+            "POST /match-template": "Find template matching a hash",
+            "POST /match-template-from-url": "Find template matching from image URL (includes dimensions)",
+            "POST /add-template": "Add a new template",
+            "POST /add-template-from-url": "Add a new template from image URL (includes dimensions)",
+            "GET /templates": "List all templates",
+            "GET /templates/{template_id}": "Get template by ID",
+            "DELETE /templates/{template_id}": "Delete a template"
         }
     }
+
+
+@app.post("/image-dimensions")
+async def get_image_dimensions_endpoint(file: UploadFile = File(...)):
+    """
+    Get dimensions (width, height) of an uploaded image.
+    
+    Args:
+        file: Image file to analyze
+        
+    Returns:
+        dict: Image dimensions and metadata
+    """
+    # Check file type
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=400,
+            detail="File must be an image (JPEG, PNG, etc.)"
+        )
+    
+    try:
+        # Read file content
+        image_data = await file.read()
+        
+        # Get dimensions
+        width, height = get_image_dimensions_from_bytes(image_data)
+        
+        return {
+            "success": True,
+            "width": width,
+            "height": height,
+            "filename": file.filename,
+            "content_type": file.content_type,
+            "file_size": len(image_data),
+            "processed_at": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error getting image dimensions: {str(e)}"
+        )
+
+
+@app.post("/image-dimensions-from-url")
+async def get_image_dimensions_from_url(image_url: str = Form(...)):
+    """
+    Get dimensions (width, height) of an image from its URL.
+    
+    Args:
+        image_url: Public URL of the image to analyze
+        
+    Returns:
+        dict: Image dimensions and metadata
+    """
+    try:
+        # Download image from URL
+        print(f"📥 Downloading image for dimensions: {image_url}")
+        response = requests.get(image_url, timeout=30)
+        response.raise_for_status()
+        
+        # Check content type
+        content_type = response.headers.get('content-type', '')
+        if not content_type.startswith('image/'):
+            raise HTTPException(
+                status_code=400,
+                detail=f"URL does not point to a valid image. Content type: {content_type}"
+            )
+        
+        # Get image data and dimensions
+        image_data = response.content
+        image_size = len(image_data)
+        width, height = get_image_dimensions_from_bytes(image_data)
+        
+        return {
+            "success": True,
+            "width": width,
+            "height": height,
+            "image_info": {
+                "url": image_url,
+                "content_type": content_type,
+                "file_size": image_size,
+                "processed_at": datetime.now().isoformat()
+            }
+        }
+        
+    except requests.exceptions.Timeout:
+        raise HTTPException(
+            status_code=408,
+            detail="Timeout while downloading image (>30s)"
+        )
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Error downloading image: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error getting image dimensions: {str(e)}"
+        )
 
 
 @app.post("/hash-image")
 async def hash_image(file: UploadFile = File(...)):
     """
-    Calcule le hash perceptuel (pHash) d'une image uploadée.
+    Calculate the perceptual hash (pHash) of an uploaded image and get its dimensions.
     
     Args:
-        file: Fichier image à hasher
+        file: Image file to hash
         
     Returns:
-        dict: Hash de l'image et métadonnées
+        dict: Image hash, dimensions (width, height), and metadata
     """
-    # Vérifier le type de fichier
+    # Check file type
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(
             status_code=400,
-            detail="Le fichier doit être une image (JPEG, PNG, etc.)"
+            detail="File must be an image (JPEG, PNG, etc.)"
         )
     
     try:
-        # Lire le contenu du fichier
+        # Read file content
         image_data = await file.read()
         
-        # Générer le hash
-        image_hash = generate_phash_from_bytes(image_data)
+        # Generate hash and get dimensions
+        hash_and_dimensions = generate_phash_with_dimensions_from_bytes(image_data)
+        width, height = get_image_dimensions_from_bytes(image_data)
         
         return {
             "success": True,
-            "hash": image_hash,
+            "hash": hash_and_dimensions["hash"],
+            "width": hash_and_dimensions["width"],
+            "height": hash_and_dimensions["height"],
             "filename": file.filename,
             "content_type": file.content_type,
             "file_size": len(image_data),
@@ -80,7 +186,7 @@ async def hash_image(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors du calcul du hash: {str(e)}"
+            detail=f"Error calculating hash: {str(e)}"
         )
 
 
@@ -90,24 +196,24 @@ async def match_template(
     threshold: Optional[int] = Form(5)
 ):
     """
-    Trouve le template correspondant le mieux à un hash donné.
+    Find the best matching template for a given hash.
     
     Args:
-        hash_value: Hash à rechercher
-        threshold: Seuil de distance de Hamming (défaut: 5)
+        hash_value: Hash to search for
+        threshold: Hamming distance threshold (default: 5)
         
     Returns:
-        dict: Template correspondant ou message si aucun trouvé
+        dict: Matching template or message if none found
     """
     try:
-        # Utiliser la valeur par défaut si threshold est None
+        # Use default value if threshold is None
         threshold_value = threshold if threshold is not None else 5
         
-        # Rechercher le template correspondant
+        # Search for matching template
         matched_template = template_manager.find_template_by_hash(hash_value, threshold_value)
         
         if matched_template:
-            # Calculer la distance exacte
+            # Calculate exact distance
             distance = hamming_distance(hash_value, matched_template["hash"])
             
             return {
@@ -115,23 +221,23 @@ async def match_template(
                 "match_found": True,
                 "template": matched_template,
                 "hamming_distance": distance,
-                "similarity_score": max(0, 100 - (distance * 5))  # Score de similarité approximatif
+                "similarity_score": max(0, 100 - (distance * 5))  # Approximate similarity score
             }
         else:
             return {
                 "success": True,
                 "match_found": False,
-                "message": f"Aucun template trouvé avec une distance < {threshold_value}",
+                "message": f"No template found with distance < {threshold_value}",
                 "suggestions": {
-                    "create_new_template": f"POST /add-template avec ce hash: {hash_value}",
-                    "try_higher_threshold": "Essayez avec un seuil plus élevé"
+                    "create_new_template": f"POST /add-template with this hash: {hash_value}",
+                    "try_higher_threshold": "Try with a higher threshold"
                 }
             }
             
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de la recherche de template: {str(e)}"
+            detail=f"Error searching for template: {str(e)}"
         )
 
 
@@ -141,46 +247,47 @@ async def match_template_from_url(
     threshold: Optional[int] = Form(5)
 ):
     """
-    Trouve le template correspondant à une image depuis son URL.
+    Find the template matching an image from its URL.
     
     Args:
-        image_url: URL publique de l'image à analyser
-        threshold: Seuil de distance de Hamming (défaut: 5)
+        image_url: Public URL of the image to analyze
+        threshold: Hamming distance threshold (default: 5)
         
     Returns:
-        dict: Template correspondant avec hash calculé et métadonnées
+        dict: Matching template with calculated hash and metadata
     """
     try:
-        # Utiliser la valeur par défaut si threshold est None
+        # Use default value if threshold is None
         threshold_value = threshold if threshold is not None else 5
         
-        # Télécharger l'image depuis l'URL
-        print(f"📥 Téléchargement de l'image: {image_url}")
+        # Download image from URL
+        print(f"📥 Downloading image: {image_url}")
         response = requests.get(image_url, timeout=30)
         response.raise_for_status()
         
-        # Vérifier le type de contenu
+        # Check content type
         content_type = response.headers.get('content-type', '')
         if not content_type.startswith('image/'):
             raise HTTPException(
                 status_code=400,
-                detail=f"L'URL ne pointe pas vers une image valide. Type de contenu: {content_type}"
+                detail=f"URL does not point to a valid image. Content type: {content_type}"
             )
         
-        # Obtenir les données de l'image
+        # Get image data
         image_data = response.content
         image_size = len(image_data)
         
-        # Calculer le hash de l'image
-        print(f"🔢 Calcul du hash pour l'image ({image_size} bytes)")
-        calculated_hash = generate_phash_from_bytes(image_data)
+        # Calculate image hash and get dimensions
+        print(f"🔢 Calculating hash for image ({image_size} bytes)")
+        hash_and_dimensions = generate_phash_with_dimensions_from_bytes(image_data)
+        calculated_hash = hash_and_dimensions["hash"]
         
-        # Rechercher le template correspondant
-        print(f"🔍 Recherche de template pour hash: {calculated_hash}")
+        # Search for matching template
+        print(f"🔍 Searching template for hash: {calculated_hash}")
         matched_template = template_manager.find_template_by_hash(calculated_hash, threshold_value)
         
         if matched_template:
-            # Calculer la distance exacte
+            # Calculate exact distance
             distance = hamming_distance(calculated_hash, matched_template["hash"])
             
             return {
@@ -189,6 +296,8 @@ async def match_template_from_url(
                 "image_info": {
                     "url": image_url,
                     "hash": calculated_hash,
+                    "width": hash_and_dimensions["width"],
+                    "height": hash_and_dimensions["height"],
                     "content_type": content_type,
                     "file_size": image_size,
                     "processed_at": datetime.now().isoformat()
@@ -205,33 +314,35 @@ async def match_template_from_url(
                 "image_info": {
                     "url": image_url,
                     "hash": calculated_hash,
+                    "width": hash_and_dimensions["width"],
+                    "height": hash_and_dimensions["height"],
                     "content_type": content_type,
                     "file_size": image_size,
                     "processed_at": datetime.now().isoformat()
                 },
-                "message": f"Aucun template trouvé avec une distance < {threshold_value}",
+                "message": f"No template found with distance < {threshold_value}",
                 "suggestions": {
                     "calculated_hash": calculated_hash,
-                    "create_new_template": f"POST /add-template avec ce hash: {calculated_hash}",
-                    "try_higher_threshold": "Essayez avec un seuil plus élevé (ex: 10-15)",
-                    "manual_check": "Vérifiez manuellement si cette image devrait correspondre à un template existant"
+                    "create_new_template": f"POST /add-template with this hash: {calculated_hash}",
+                    "try_higher_threshold": "Try with a higher threshold (ex: 10-15)",
+                    "manual_check": "Manually check if this image should match an existing template"
                 }
             }
             
     except requests.exceptions.Timeout:
         raise HTTPException(
             status_code=408,
-            detail="Timeout lors du téléchargement de l'image (>30s)"
+            detail="Timeout while downloading image (>30s)"
         )
     except requests.exceptions.RequestException as e:
         raise HTTPException(
             status_code=400,
-            detail=f"Erreur lors du téléchargement de l'image: {str(e)}"
+            detail=f"Error downloading image: {str(e)}"
         )
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors du traitement: {str(e)}"
+            detail=f"Error during processing: {str(e)}"
         )
 
 
@@ -247,34 +358,47 @@ async def add_template(
     file: Optional[UploadFile] = File(None)
 ):
     """
-    Ajoute un nouveau template au système.
+    Add a new template to the system.
     
     Args:
-        name: Nom du template
-        hash_value: Hash perceptuel du template
-        reference_image_path: Chemin vers l'image de référence
-        file: Optionnel - fichier image pour calculer automatiquement le hash
+        name: Template name
+        hash_value: Perceptual hash of the template
+        reference_image_path: Path to reference image
+        file: Optional - image file to automatically calculate hash
         
     Returns:
-        dict: Template créé avec ses informations
+        dict: Created template with its information
     """
     try:
-        # Si un fichier est fourni, calculer le hash automatiquement
+        # Variables to store image dimensions if file is provided
+        image_dimensions = None
+        
+        # If a file is provided, calculate hash automatically
         if file:
             if not file.content_type or not file.content_type.startswith("image/"):
                 raise HTTPException(
                     status_code=400,
-                    detail="Le fichier doit être une image (JPEG, PNG, etc.)"
+                    detail="File must be an image (JPEG, PNG, etc.)"
                 )
             
             image_data = await file.read()
-            calculated_hash = generate_phash_from_bytes(image_data)
+            hash_and_dimensions = generate_phash_with_dimensions_from_bytes(image_data)
+            calculated_hash = hash_and_dimensions["hash"]
             
-            # Utiliser le hash calculé si aucun n'est fourni explicitement
+            # Store dimensions for response
+            image_dimensions = {
+                "width": hash_and_dimensions["width"],
+                "height": hash_and_dimensions["height"],
+                "file_size": len(image_data),
+                "content_type": file.content_type,
+                "filename": file.filename
+            }
+            
+            # Use calculated hash if none is provided explicitly
             if not hash_value or hash_value == "auto":
                 hash_value = calculated_hash
             
-            # Optionnel: sauvegarder l'image de référence localement
+            # Optional: save reference image locally
             if reference_image_path == "auto":
                 upload_dir = "data/uploads"
                 os.makedirs(upload_dir, exist_ok=True)
@@ -284,7 +408,7 @@ async def add_template(
                 with open(reference_image_path, "wb") as f:
                     f.write(image_data)
         
-        # Convertir les coordonnées de cropping (string vers int)
+        # Convert cropping coordinates (string to int)
         crop_coords = {}
         try:
             if crop_x is not None and crop_x.strip():
@@ -298,23 +422,35 @@ async def add_template(
         except ValueError as e:
             raise HTTPException(
                 status_code=400,
-                detail=f"Les coordonnées de cropping doivent être des nombres entiers: {e}"
+                detail=f"Cropping coordinates must be integers: {e}"
             )
         
-        # Ajouter le template avec les coordonnées de cropping
+        # Add template with cropping coordinates and image dimensions if available
         new_template = template_manager.save_template(
             name, hash_value, reference_image_path, 
             crop_x=crop_coords.get('crop_x'),
             crop_y=crop_coords.get('crop_y'),
             crop_w=crop_coords.get('crop_w'),
-            crop_h=crop_coords.get('crop_h')
+            crop_h=crop_coords.get('crop_h'),
+            image_width=image_dimensions["width"] if image_dimensions else None,
+            image_height=image_dimensions["height"] if image_dimensions else None
         )
         
-        return {
+        # Prepare response with dimensions if available
+        response = {
             "success": True,
-            "message": f"Template '{name}' ajouté avec succès",
+            "message": f"Template '{name}' added successfully",
             "template": new_template
         }
+        
+        # Add image dimensions if file was processed
+        if image_dimensions:
+            response["image_info"] = {
+                **image_dimensions,
+                "processed_at": datetime.now().isoformat()
+            }
+        
+        return response
         
     except ValueError as e:
         raise HTTPException(
@@ -324,7 +460,7 @@ async def add_template(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de l'ajout du template: {str(e)}"
+            detail=f"Error adding template: {str(e)}"
         )
 
 
@@ -334,72 +470,73 @@ async def add_template_from_url(
     name: Optional[str] = Form(None)
 ):
     """
-    Ajoute un nouveau template à partir d'une URL d'image.
+    Add a new template from an image URL.
     
     Args:
-        image_url: URL publique de l'image à utiliser comme template
-        name: Nom du template (optionnel, généré automatiquement si non fourni)
+        image_url: Public URL of image to use as template
+        name: Template name (optional, auto-generated if not provided)
         
     Returns:
-        dict: Template créé avec ses informations
+        dict: Created template with its information
     """
     try:
-        # Télécharger l'image depuis l'URL
-        print(f"📥 Téléchargement de l'image pour nouveau template: {image_url}")
+        # Download image from URL
+        print(f"📥 Downloading image for new template: {image_url}")
         response = requests.get(image_url, timeout=30)
         response.raise_for_status()
         
-        # Vérifier le type de contenu
+        # Check content type
         content_type = response.headers.get('content-type', '')
         if not content_type.startswith('image/'):
             raise HTTPException(
                 status_code=400,
-                detail=f"L'URL ne pointe pas vers une image valide. Type de contenu: {content_type}"
+                detail=f"URL does not point to a valid image. Content type: {content_type}"
             )
         
-        # Obtenir les données de l'image
+        # Get image data
         image_data = response.content
         image_size = len(image_data)
         
-        # Calculer le hash de l'image
-        print(f"🔢 Calcul du hash pour le nouveau template ({image_size} bytes)")
-        calculated_hash = generate_phash_from_bytes(image_data)
+        # Calculate image hash and get dimensions
+        print(f"🔢 Calculating hash for new template ({image_size} bytes)")
+        hash_and_dimensions = generate_phash_with_dimensions_from_bytes(image_data)
+        calculated_hash = hash_and_dimensions["hash"]
         
-        # Vérifier si un template avec ce hash existe déjà
+        # Check if template with this hash already exists
         existing_template = template_manager.find_template_by_hash(calculated_hash, threshold=2)
         if existing_template:
             return {
                 "success": False,
                 "error": "template_already_exists",
-                "message": f"Un template similaire existe déjà: '{existing_template['name']}'",
+                "message": f"A similar template already exists: '{existing_template['name']}'",
                 "existing_template": existing_template,
                 "hash_distance": hamming_distance(calculated_hash, existing_template["hash"]),
-                "suggestion": "Utilisez un seuil plus strict ou modifiez le template existant"
+                "suggestion": "Use a stricter threshold or modify the existing template"
             }
         
-        # Générer un nom automatique si non fourni
+        # Generate automatic name if not provided
         if not name:
             existing_templates = template_manager.list_templates()
             template_count = len(existing_templates) + 1
             name = f"Template Auto {template_count}"
             
-            # Vérifier que le nom n'existe pas déjà (au cas où)
+            # Check that name doesn't already exist (just in case)
             while any(t["name"] == name for t in existing_templates):
                 template_count += 1
                 name = f"Template Auto {template_count}"
         
-        # Créer le répertoire de sauvegarde
+        # Create upload directory
         upload_dir = "data/uploads"
         os.makedirs(upload_dir, exist_ok=True)
         
-        # Générer un nom de fichier sécurisé
+        # Generate secure filename
         from urllib.parse import urlparse
         parsed_url = urlparse(image_url)
         original_filename = os.path.basename(parsed_url.path) or "template_image"
         
-        # Ajouter extension si manquante
+        # Add extension if missing
         if not os.path.splitext(original_filename)[1]:
-            extension = ".jpg"  # défaut
+            extension = ".jpg"  # default
             if "png" in content_type:
                 extension = ".png"
             elif "gif" in content_type:
@@ -408,52 +545,58 @@ async def add_template_from_url(
                 extension = ".webp"
             original_filename += extension
         
-        # Créer le chemin de fichier final
+        # Create final file path
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         safe_name = name.replace(" ", "_").replace("/", "_").replace("\\", "_")
         filename = f"{safe_name}_{timestamp}_{original_filename}"
         reference_image_path = os.path.join(upload_dir, filename)
         
-        # Sauvegarder l'image localement
-        print(f"💾 Sauvegarde de l'image: {reference_image_path}")
+        # Save image locally
+        print(f"💾 Saving image: {reference_image_path}")
         with open(reference_image_path, "wb") as f:
             f.write(image_data)
         
-        # Ajouter le template
-        print(f"➕ Création du template: {name}")
-        new_template = template_manager.save_template(name, calculated_hash, reference_image_path)
+        # Add template with image dimensions
+        print(f"➕ Creating template: {name}")
+        new_template = template_manager.save_template(
+            name, calculated_hash, reference_image_path,
+            image_width=hash_and_dimensions["width"],
+            image_height=hash_and_dimensions["height"]
+        )
         
         return {
             "success": True,
-            "message": f"Template '{name}' créé avec succès à partir de l'URL",
+            "message": f"Template '{name}' created successfully from URL",
             "template": new_template,
             "image_info": {
                 "source_url": image_url,
                 "local_path": reference_image_path,
                 "hash": calculated_hash,
+                "width": hash_and_dimensions["width"],
+                "height": hash_and_dimensions["height"],
                 "content_type": content_type,
                 "file_size": image_size,
                 "processed_at": datetime.now().isoformat()
             },
             "next_steps": {
-                "edit_name": f"Vous pouvez modifier le nom via PUT /templates/{new_template['id']}",
-                "test_matching": f"Testez avec POST /match-template-from-url",
-                "view_all": "GET /templates pour voir tous les templates"
+                "edit_name": f"You can modify the name via PUT /templates/{new_template['id']}",
+                "test_matching": f"Test with POST /match-template-from-url",
+                "view_all": "GET /templates to see all templates"
             }
         }
         
     except requests.exceptions.Timeout:
         raise HTTPException(
             status_code=408,
-            detail="Timeout lors du téléchargement de l'image (>30s)"
+            detail="Timeout while downloading image (>30s)"
         )
     except requests.exceptions.RequestException as e:
         raise HTTPException(
             status_code=400,
-            detail=f"Erreur lors du téléchargement de l'image: {str(e)}"
+            detail=f"Error downloading image: {str(e)}"
         )
     except ValueError as e:
-        # Erreur du template_manager (nom déjà existant, etc.)
+        # Error from template_manager (name already exists, etc.)
         raise HTTPException(
             status_code=400,
             detail=str(e)
@@ -461,17 +604,17 @@ async def add_template_from_url(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de la création du template: {str(e)}"
+            detail=f"Error creating template: {str(e)}"
         )
 
 
 @app.get("/templates")
 async def list_templates():
     """
-    Liste tous les templates disponibles.
+    List all available templates.
     
     Returns:
-        dict: Liste des templates avec leurs statistiques
+        dict: List of templates with their statistics
     """
     try:
         templates = template_manager.list_templates()
@@ -485,20 +628,20 @@ async def list_templates():
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de la récupération des templates: {str(e)}"
+            detail=f"Error retrieving templates: {str(e)}"
         )
 
 
 @app.get("/templates/{template_id}")
 async def get_template(template_id: int):
     """
-    Récupère un template spécifique par son ID.
+    Retrieve a specific template by its ID.
     
     Args:
-        template_id: ID du template
+        template_id: Template ID
         
     Returns:
-        dict: Informations du template
+        dict: Template information
     """
     try:
         template = template_manager.get_template_by_id(template_id)
@@ -506,7 +649,7 @@ async def get_template(template_id: int):
         if not template:
             raise HTTPException(
                 status_code=404,
-                detail=f"Template avec l'ID {template_id} non trouvé"
+                detail=f"Template with ID {template_id} not found"
             )
         
         return {
@@ -519,7 +662,7 @@ async def get_template(template_id: int):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de la récupération du template: {str(e)}"
+            detail=f"Error retrieving template: {str(e)}"
         )
 
 
@@ -530,37 +673,37 @@ async def update_template(
     reference_image_path: Optional[str] = Form(None)
 ):
     """
-    Met à jour les informations d'un template.
+    Update template information.
     
     Args:
-        template_id: ID du template à modifier
-        name: Nouveau nom du template (optionnel)
-        reference_image_path: Nouveau chemin de l'image de référence (optionnel)
+        template_id: ID of template to modify
+        name: New template name (optional)
+        reference_image_path: New reference image path (optional)
         
     Returns:
-        dict: Template modifié
+        dict: Modified template
     """
     try:
-        # Vérifier que le template existe
+        # Check that template exists
         existing_template = template_manager.get_template_by_id(template_id)
         if not existing_template:
             raise HTTPException(
                 status_code=404,
-                detail=f"Template avec l'ID {template_id} non trouvé"
+                detail=f"Template with ID {template_id} not found"
             )
         
-        # Si un nouveau nom est fourni, vérifier qu'il n'existe pas déjà
+        # If new name provided, check it doesn't already exist
         if name and name != existing_template["name"]:
             if template_manager.get_template_by_name(name):
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Un template avec le nom '{name}' existe déjà"
+                    detail=f"A template with name '{name}' already exists"
                 )
         
-        # Charger tous les templates pour la modification
+        # Load all templates for modification
         templates = template_manager.load_templates()
         
-        # Trouver et modifier le template
+        # Find and modify template
         for template in templates:
             if template["id"] == template_id:
                 if name:
@@ -570,18 +713,18 @@ async def update_template(
                 template["updated_at"] = datetime.now().isoformat()
                 break
         
-        # Sauvegarder les modifications
+        # Save modifications
         data = {"templates": templates}
         with open(template_manager.templates_file, 'w', encoding='utf-8') as f:
             import json
             json.dump(data, f, indent=2, ensure_ascii=False)
         
-        # Retourner le template modifié
+        # Return modified template
         updated_template = template_manager.get_template_by_id(template_id)
         
         return {
             "success": True,
-            "message": f"Template {template_id} mis à jour avec succès",
+            "message": f"Template {template_id} updated successfully",
             "template": updated_template,
             "changes_made": {
                 "name_updated": name is not None,
@@ -594,20 +737,20 @@ async def update_template(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de la mise à jour du template: {str(e)}"
+            detail=f"Error updating template: {str(e)}"
         )
 
 
 @app.delete("/templates/{template_id}")
 async def delete_template(template_id: int):
     """
-    Supprime un template par son ID.
+    Delete a template by its ID.
     
     Args:
-        template_id: ID du template à supprimer
+        template_id: ID of template to delete
         
     Returns:
-        dict: Confirmation de suppression
+        dict: Deletion confirmation
     """
     try:
         deleted = template_manager.delete_template(template_id)
@@ -615,12 +758,12 @@ async def delete_template(template_id: int):
         if not deleted:
             raise HTTPException(
                 status_code=404,
-                detail=f"Template avec l'ID {template_id} non trouvé"
+                detail=f"Template with ID {template_id} not found"
             )
         
         return {
             "success": True,
-            "message": f"Template {template_id} supprimé avec succès"
+            "message": f"Template {template_id} deleted successfully"
         }
         
     except HTTPException:
@@ -628,7 +771,7 @@ async def delete_template(template_id: int):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de la suppression du template: {str(e)}"
+            detail=f"Error deleting template: {str(e)}"
         )
 
 
@@ -638,14 +781,14 @@ async def compare_hashes(
     hash2: str = Form(...)
 ):
     """
-    Compare deux hash et retourne leur distance de Hamming.
+    Compare two hashes and return their Hamming distance.
     
     Args:
-        hash1: Premier hash
-        hash2: Deuxième hash
+        hash1: First hash
+        hash2: Second hash
         
     Returns:
-        dict: Distance et similarité entre les hash
+        dict: Distance and similarity between hashes
     """
     try:
         distance = hamming_distance(hash1, hash2)
@@ -663,7 +806,7 @@ async def compare_hashes(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de la comparaison des hash: {str(e)}"
+            detail=f"Error comparing hashes: {str(e)}"
         )
 
 

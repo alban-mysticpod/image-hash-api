@@ -48,7 +48,8 @@ class TemplateManager:
     
     def save_template(self, name: str, hash_value: str, reference_image_path: str, 
                      crop_x: Optional[int] = None, crop_y: Optional[int] = None, 
-                     crop_w: Optional[int] = None, crop_h: Optional[int] = None) -> Dict:
+                     crop_w: Optional[int] = None, crop_h: Optional[int] = None,
+                     image_width: Optional[int] = None, image_height: Optional[int] = None) -> Dict:
         """
         Ajoute un nouveau template au fichier JSON.
         
@@ -56,9 +57,15 @@ class TemplateManager:
             name (str): Nom du template
             hash_value (str): Hash perceptuel du template
             reference_image_path (str): Chemin vers l'image de référence
+            crop_x (Optional[int]): Position X du crop
+            crop_y (Optional[int]): Position Y du crop
+            crop_w (Optional[int]): Largeur du crop
+            crop_h (Optional[int]): Hauteur du crop
+            image_width (Optional[int]): Largeur de l'image originale
+            image_height (Optional[int]): Hauteur de l'image originale
             
         Returns:
-            Dict: Le template créé avec son ID
+            Dict: Le template créé avec son ID et les ratios de crop
             
         Raises:
             ValueError: Si un template avec le même nom existe déjà
@@ -89,7 +96,23 @@ class TemplateManager:
         if crop_h is not None:
             new_template["crop_h"] = crop_h
             
-
+        # Ajouter les dimensions de l'image si fournies
+        if image_width is not None:
+            new_template["image_width"] = image_width
+        if image_height is not None:
+            new_template["image_height"] = image_height
+            
+        # Calculer les ratios de crop si on a les dimensions ET les coordonnées de crop
+        if (image_width is not None and image_height is not None and 
+            crop_x is not None and crop_y is not None and 
+            crop_w is not None and crop_h is not None):
+            
+            # Éviter la division par zéro
+            if image_width > 0 and image_height > 0:
+                new_template["crop_x_ratio"] = crop_x / image_width
+                new_template["crop_y_ratio"] = crop_y / image_height
+                new_template["crop_w_ratio"] = crop_w / image_width
+                new_template["crop_h_ratio"] = crop_h / image_height
         
         # Ajouter à la liste
         templates.append(new_template)

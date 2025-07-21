@@ -22,7 +22,7 @@ See the [detailed README](./image-hash-api/README.md) for more information.
 ## 🚀 Quick Start
 
 ### Image Hash API
-```bash
+```bash 
 cd image-hash-api
 pip install -r requirements.txt
 ./start.sh
