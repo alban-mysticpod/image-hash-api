@@ -290,6 +290,55 @@ async def match_template_from_url(
             # Calculate exact distance
             distance = hamming_distance(calculated_hash, matched_template["hash"])
             
+            # 🔄 SMART CROP COORDINATE CALCULATION
+            current_width = hash_and_dimensions["width"]
+            current_height = hash_and_dimensions["height"]
+            
+            # Create a copy of template to avoid modifying the original
+            adjusted_template = matched_template.copy()
+            
+            # Check if template has ratios (new templates) or only absolute coordinates (old templates)
+            has_ratios = all(key in matched_template for key in ['crop_x_ratio', 'crop_y_ratio', 'crop_w_ratio', 'crop_h_ratio'])
+            has_dimensions = 'image_width' in matched_template and 'image_height' in matched_template
+            has_crop_coords = all(key in matched_template for key in ['crop_x', 'crop_y', 'crop_w', 'crop_h'])
+            
+            print(f"🔄 Adjusting crop coordinates:")
+            print(f"   Current image: {current_width}x{current_height}")
+            print(f"   Template capabilities: ratios={has_ratios}, dimensions={has_dimensions}, crop_coords={has_crop_coords}")
+            
+            if has_ratios and has_crop_coords:
+                # 🎯 NEW METHOD: Use ratios to calculate coordinates for current image dimensions
+                new_crop_x = round(matched_template['crop_x_ratio'] * current_width)
+                new_crop_y = round(matched_template['crop_y_ratio'] * current_height)
+                new_crop_w = round(matched_template['crop_w_ratio'] * current_width)
+                new_crop_h = round(matched_template['crop_h_ratio'] * current_height)
+                
+                print(f"   🎯 Using ratios to recalculate:")
+                print(f"      Original coords: x={matched_template['crop_x']}, y={matched_template['crop_y']}, w={matched_template['crop_w']}, h={matched_template['crop_h']}")
+                print(f"      Ratios: x={matched_template['crop_x_ratio']:.3f}, y={matched_template['crop_y_ratio']:.3f}, w={matched_template['crop_w_ratio']:.3f}, h={matched_template['crop_h_ratio']:.3f}")
+                print(f"      Adjusted coords: x={new_crop_x}, y={new_crop_y}, w={new_crop_w}, h={new_crop_h}")
+                
+                # Update the template with adjusted coordinates
+                adjusted_template.update({
+                    'crop_x': new_crop_x,
+                    'crop_y': new_crop_y,
+                    'crop_w': new_crop_w,
+                    'crop_h': new_crop_h,
+                    'adjusted_for_dimensions': f"{current_width}x{current_height}",
+                    'calculation_method': 'ratio_based'
+                })
+                
+            elif has_crop_coords:
+                # 📐 OLD METHOD: Keep original absolute coordinates (backwards compatibility)
+                print(f"   📐 Using original absolute coordinates (no ratios available)")
+                print(f"      Coords: x={matched_template['crop_x']}, y={matched_template['crop_y']}, w={matched_template['crop_w']}, h={matched_template['crop_h']}")
+                adjusted_template['calculation_method'] = 'absolute_coordinates'
+                
+            else:
+                # ⚠️ NO CROP DATA: Template has no crop information
+                print(f"   ⚠️ Template has no crop coordinates")
+                adjusted_template['calculation_method'] = 'no_crop_data'
+            
             return {
                 "success": True,
                 "match_found": True,
@@ -302,7 +351,7 @@ async def match_template_from_url(
                     "file_size": image_size,
                     "processed_at": datetime.now().isoformat()
                 },
-                "template": matched_template,
+                "template": adjusted_template,
                 "hamming_distance": distance,
                 "similarity_score": max(0, 100 - (distance * 5)),
                 "confidence": "high" if distance <= 2 else "medium" if distance <= 5 else "low"
