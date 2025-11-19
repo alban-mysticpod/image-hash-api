@@ -449,7 +449,7 @@ async def add_template(
             
             # Optional: save reference image locally
             if reference_image_path == "auto":
-                upload_dir = "data/uploads"
+                upload_dir = os.path.join(project_root, "data", "uploads")
                 os.makedirs(upload_dir, exist_ok=True)
                 safe_filename = f"{name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename}"
                 reference_image_path = os.path.join(upload_dir, safe_filename)
@@ -575,7 +575,7 @@ async def add_template_from_url(
                 name = f"Template Auto {template_count}"
         
         # Create upload directory
-        upload_dir = "data/uploads"
+        upload_dir = os.path.join(project_root, "data", "uploads")
         os.makedirs(upload_dir, exist_ok=True)
         
         # Generate secure filename

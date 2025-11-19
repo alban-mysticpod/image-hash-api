@@ -10,13 +10,18 @@ from datetime import datetime
 class TemplateManager:
     """Gestionnaire pour les templates d'images."""
     
-    def __init__(self, templates_file: str = "data/templates.json"):
+    def __init__(self, templates_file: str = None):
         """
         Initialise le gestionnaire de templates.
         
         Args:
             templates_file (str): Chemin vers le fichier JSON des templates
         """
+        if templates_file is None:
+            # Utiliser un chemin absolu basé sur la racine du projet
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            templates_file = os.path.join(project_root, "data", "templates.json")
+        
         self.templates_file = templates_file
         self._ensure_templates_file_exists()
     
