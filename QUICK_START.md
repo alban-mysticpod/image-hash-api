@@ -7,7 +7,8 @@
 pip install fastapi uvicorn imagehash pillow python-multipart
 
 # 2. Démarrer l'API
-uvicorn api.main:app --reload
+./start_local.sh
+# OU: uvicorn api.main:app --host 0.0.0.0 --port 8080 --reload
 
 # 3. Ouvrir http://localhost:8080/docs dans votre navigateur
 ```
@@ -16,7 +17,7 @@ uvicorn api.main:app --reload
 
 ```bash
 # Démarrer l'API dans un terminal
-uvicorn api.main:app --reload
+./start_local.sh
 
 # Dans un autre terminal, tester
 python3 example_usage.py
@@ -57,7 +58,8 @@ image-hash-api/
 ├── README.md               # 📖 Documentation complète
 ├── example_usage.py        # 🧪 Exemple d'utilisation
 ├── test_api.py            # 🧪 Tests automatiques
-└── start.sh               # 🚀 Script de démarrage
+├── start_local.sh         # 🚀 Script de démarrage (dev)
+└── render.yaml            # ☁️ Config déploiement Render
 ```
 
 ## 🎪 Fonctionnalités
@@ -73,7 +75,7 @@ image-hash-api/
 ## 🎛️ Paramètres Importants
 
 - **Seuil par défaut**: 5 (distance de Hamming)
-- **Port par défaut**: 8000
+- **Port par défaut**: 8080 (local) / $PORT (Render)
 - **Formats supportés**: JPEG, PNG, BMP, TIFF, WebP
 - **Taille max**: 16MB par fichier
 
